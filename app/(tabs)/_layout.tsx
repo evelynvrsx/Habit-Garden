@@ -7,7 +7,8 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#4CAF50', // your brand color
         tabBarStyle: { backgroundColor: '#fff' },
-        headerShown: false,
+        headerShown: true,
+        headerTitleAlign: 'center',
       }}
     >
       <Tabs.Screen
@@ -20,11 +21,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="habits"
+        name="garden"
         options={{
-          title: 'Habits',
+          title: 'Garden',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="leaf" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="NewHabit"
+        options={{
+          title: 'Create Habit',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />

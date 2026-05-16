@@ -1,12 +1,19 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Button, Alert, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen() {
-  return (
+    const navigation = useNavigation();
+    return (
     <View style={styles.container}>
       <Text style={styles.title}>Habit Garden</Text>
       <Text>Description of app here</Text>
+      <Button
+        title="Create Habit"
+        onPress={() => navigation.navigate('NewHabit')}       // should open a new page to create a habit
+        color="#355336"
+      />
     </View>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
