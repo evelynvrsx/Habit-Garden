@@ -1,15 +1,14 @@
 import { View, Text, Button, Alert, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 
 export default function HomeScreen() {
-    const navigation = useNavigation();
     return (
     <View style={styles.container}>
       <Text style={styles.title}>Habit Garden</Text>
       <Text>Description of app here</Text>
       <Button
         title="Create Habit"
-        onPress={() => navigation.navigate('NewHabit')}       // should open a new page to create a habit
+        onPress={() => router.push('/newhabit')}       // should open a new page to create a habit
         color="#355336"
       />
     </View>
