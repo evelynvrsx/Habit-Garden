@@ -1,17 +1,37 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Switch, TextInput, Button } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
+import IconPicker from "react-native-icon-picker";
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 export default function NewHabitScreen() {
   const [number, onChangeNumber] = React.useState('');
   const [isEnabled, setIsEnabled] = useState(false);
   const toggleSwitch = () => setIsEnabled(previousState => !previousState);
   const [value, setValue] = useState(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState(null);
+  const [isExpanded, dailyIsExpanded] = useState(false);
 
   return (
     <View style={{ flex: 1, justifyContent: 'top', alignItems: 'flex-start' }}>
       <Text>Add New Habit Screen</Text>
       // Habit Title
+      <IconPicker
+          showIconPicker={showPicker}
+          toggleIconPicker={() => setShowPicker(!showPicker)}
+          iconDetails={iconList}
+          onSelect={(icon) => {
+            setSelectedIcon(icon);
+            setShowPicker(false);
+          }}
+          content={
+            <View style={{ padding: 10, backgroundColor: '#E3EED9' }}>
+              <Text>{selectedIcon ? `Selected: ${selectedIcon.icon}` : "Pick an Icon"}</Text>
+            </View>
+          }
+      />
+
       <TextInput
         style={styles.input}
         onChangeText={onChangeNumber}
@@ -32,24 +52,54 @@ export default function NewHabitScreen() {
       </View>
 
       // Dropdown
-      <Dropdown
-        style={styles.dropdown}
-        data={dropdownTimeNumber}
-        labelField="label"
-        valueField="value"
-        placeholder="30"
-        value={value}
-        onChange={item => setValue(item.value)}
-      />
-      <Dropdown
-          style={styles.dropdown}
-          data={dropdownTimeType}
-          labelField="label"
-          valueField="value"
-          placeholder="Minutes"
-          value={value}
-          onChange={item => setValue(item.value)}
-      />
+      <View style={{ flexDirection: 'row', margin: 20 }}>
+          <Dropdown
+              style={styles.dropdown}
+              data={dropdownTimeNumber}
+              labelField="label"
+              valueField="value"
+              placeholder="30"
+              value={value}
+              onChange={item => setValue(item.value)}
+          />
+          <Dropdown
+              style={styles.dropdown}
+              data={dropdownTimeType}
+              labelField="label"
+              valueField="value"
+              placeholder="Minutes"
+              value={value}
+              onChange={item => setValue(item.value)}
+          />
+      </View>
+
+      // Repeat Habit
+      <View style={styles.line} />
+      <Text>Repeat Habit</Text>
+
+      <View style={{ flexDirection: 'row', margin: 20 }}>
+        <Button
+            title="Daily"
+            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
+            color="#74B084"
+        />
+        <Button
+            title="Weekly"
+            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
+            color="#E3EED9"
+        />
+        <Button
+            title="Monthly"
+            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
+            color="#E3EED9"
+        />
+        <Button
+            title="Custom"
+            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
+            color="#E3EED9"
+        />
+      </View>
+
 
     </View>
   );
@@ -69,6 +119,12 @@ const dropdownTimeType = [
   { label: 'Hours', value: '3' },
 ];
 
+const iconList = [
+    { family: "AntDesign", icons: ["wallet", "user", "home"] },
+    { family: "FontAwesome", icons: ["rocket", "star"] },
+    { family: "MaterialIcons", icons: ["category", "alarm"] }
+];
+
 const styles = StyleSheet.create({
   input: {
       height: 40,
@@ -83,4 +139,11 @@ const styles = StyleSheet.create({
       borderRadius: 8,
       paddingHorizontal: 8
   },
+  line: {
+      height: 0.5,
+      width: '100%',
+      backgroundColor: '#A0C19F',
+      marginVertical: 20,
+  },
+  expandedContent: { marginTop: 10, padding: 10, backgroundColor: '#f0f0f0' }
 });
