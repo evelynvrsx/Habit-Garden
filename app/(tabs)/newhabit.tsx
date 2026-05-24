@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, TextInput, Button } from 'react-native';
+import { View, Text, StyleSheet, Switch, TextInput, Button, TouchableOpacity } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import IconPicker from "react-native-icon-picker";
 
 export default function NewHabitScreen() {
-  const [number, onChangeNumber] = React.useState('');
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [habitTitle, setHabitTitle] = useState('');
 
-  const [value, setValue] = useState(null);
+  // Separate states for your switches
+  const [targetEnabled, setTargetEnabled] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [startDateEnabled, setStartDateEnabled] = useState(false);
+  const [endDateEnabled, setEndDateEnabled] = useState(false);
+
+  // Separate states for your dropdowns
+  const [targetNumber, setTargetNumber] = useState(null);
+  const [targetType, setTargetType] = useState(null);
 
   const [showPicker, setShowPicker] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState(null);
-
   const [selectedRepeatHabit, setSelectedRepeatHabit] = useState('');
-
-  const toggleSwitch = () => setIsEnabled(previousState => !previousState);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   return (
     <View style={{ flex: 1, justifyContent: 'top', alignItems: 'flex-start' }}>
@@ -36,8 +41,8 @@ export default function NewHabitScreen() {
 
       <TextInput
         style={styles.input}
-        onChangeText={onChangeNumber}
-        value={number}
+        onChangeText={setHabitTitle}
+        value={habitTitle}
         placeholder="Enter new habit title"
         keyboardType="default"
       />
@@ -47,9 +52,9 @@ export default function NewHabitScreen() {
         <Text>Set your target</Text>
         <Switch
           trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={isEnabled ? '#f5dd4b' : '#f4f3f4'}
-          onValueChange={toggleSwitch}
-          value={isEnabled}
+          thumbColor={targetEnabled ? '#f5dd4b' : '#f4f3f4'}
+          onValueChange={() => setTargetEnabled(!targetEnabled)}
+          value={targetEnabled}
         />
       </View>
 
@@ -61,8 +66,8 @@ export default function NewHabitScreen() {
               labelField="label"
               valueField="value"
               placeholder="30"
-              value={value}
-              onChange={item => setValue(item.value)}
+              value={targetNumber}
+              onChange={item => setTargetNumber(item.value)}
           />
           <Dropdown
               style={styles.dropdown}
@@ -70,14 +75,14 @@ export default function NewHabitScreen() {
               labelField="label"
               valueField="value"
               placeholder="Minutes"
-              value={value}
-              onChange={item => setValue(item.value)}
+              value={targetType}
+              onChange={item => setTargetType(item.value)}
           />
       </View>
 
       {/* Repeat Habit */}
       <View style={styles.line} />
-      <Text>Repeat Habit</Text>
+      <Text style={{ marginHorizontal: 20, fontWeight: 'bold' }}>Repeat Habit</Text>
 
       <View style={{ flexDirection: 'row', margin: 20 }}>
         <Button
@@ -127,10 +132,50 @@ export default function NewHabitScreen() {
             </View>
         )}
 
-      {/* Advanced Settings */}
+      {/* Advanced Settings Button */}
       <View style={styles.line} />
-      <Text>Advanced Settings</Text>
 
+      <TouchableOpacity
+        style={styles.advancedButton}
+        onPress={() => setShowAdvancedSettings(!showAdvancedSettings)}
+      >
+        <Text style={styles.advancedButtonText}>
+          Advanced Settings {showAdvancedSettings ? '▲' : '▼'}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Advanced Settings Expanded Area */}
+      {showAdvancedSettings && (
+        <View style={styles.advancedContent}>
+          <View style={{ flexDirection: 'row', margin: 20 }}>
+            <Text>Remind me</Text>
+            <Switch
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={reminderEnabled ? '#f5dd4b' : '#f4f3f4'}
+              onValueChange={() => setReminderEnabled(!reminderEnabled)}
+              value={reminderEnabled}
+            />
+
+            {/* Start Date */}
+            <Text>Start date</Text>
+            <Switch
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={startDateEnabled ? '#f5dd4b' : '#f4f3f4'}
+              onValueChange={() => setStartDateEnabled(!startDateEnabled)}
+              value={startDateEnabled}
+            />
+
+            {/* End Date */}
+            <Text>End date</Text>
+            <Switch
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={endDateEnabled ? '#f5dd4b' : '#f4f3f4'}
+              onValueChange={() => setEndDateEnabled(!endDateEnabled)}
+              value={endDateEnabled}
+            />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -161,13 +206,16 @@ const styles = StyleSheet.create({
       margin: 24,
       borderWidth: 1,
       padding: 10,
+      width: '90%'
   },
   dropdown: {
+      flex: 1,
       height: 50,
       backgroundColor: '#E3EED9',
       borderWidth: 0.5,
       borderRadius: 8,
-      paddingHorizontal: 8
+      paddingHorizontal: 8,
+      marginHorizontal: 5
   },
   line: {
       height: 0.5,
@@ -175,5 +223,22 @@ const styles = StyleSheet.create({
       backgroundColor: '#A0C19F',
       marginVertical: 20,
   },
-  expandedContent: { marginTop: 10, padding: 10, backgroundColor: '#f0f0f0' }
+  expandedContent: {
+      marginTop: 10,
+      padding: 10,
+      backgroundColor: '#f0f0f0',
+      alignSelf: 'stretch',
+      marginHorizontal: 20
+  },
+  advancedButton: {
+      marginHorizontal: 20,
+      padding: 10,
+  },
+  advancedButtonText: {
+      fontWeight: 'bold',
+      color: '#74B084'
+  },
+  advancedContent: {
+      alignSelf: 'stretch'
+  }
 });
