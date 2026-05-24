@@ -2,21 +2,23 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TextInput, Button } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import IconPicker from "react-native-icon-picker";
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 export default function NewHabitScreen() {
   const [number, onChangeNumber] = React.useState('');
   const [isEnabled, setIsEnabled] = useState(false);
-  const toggleSwitch = () => setIsEnabled(previousState => !previousState);
+
   const [value, setValue] = useState(null);
+
   const [showPicker, setShowPicker] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState(null);
-  const [isExpanded, dailyIsExpanded] = useState(false);
+
+  const [selectedRepeatHabit, setSelectedRepeatHabit] = useState('');
+
+  const toggleSwitch = () => setIsEnabled(previousState => !previousState);
 
   return (
     <View style={{ flex: 1, justifyContent: 'top', alignItems: 'flex-start' }}>
-      <Text>Add New Habit Screen</Text>
-      // Habit Title
+      {/* Habit Title */}
       <IconPicker
           showIconPicker={showPicker}
           toggleIconPicker={() => setShowPicker(!showPicker)}
@@ -40,7 +42,7 @@ export default function NewHabitScreen() {
         keyboardType="default"
       />
 
-      // Set your target
+      {/* Set your target */}
       <View style={{ flexDirection: 'row', margin: 20 }}>
         <Text>Set your target</Text>
         <Switch
@@ -51,7 +53,7 @@ export default function NewHabitScreen() {
         />
       </View>
 
-      // Dropdown
+      {/* Dropdown */}
       <View style={{ flexDirection: 'row', margin: 20 }}>
           <Dropdown
               style={styles.dropdown}
@@ -73,33 +75,61 @@ export default function NewHabitScreen() {
           />
       </View>
 
-      // Repeat Habit
+      {/* Repeat Habit */}
       <View style={styles.line} />
       <Text>Repeat Habit</Text>
 
       <View style={{ flexDirection: 'row', margin: 20 }}>
         <Button
             title="Daily"
-            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
-            color="#74B084"
+            onPress={() => setSelectedRepeatHabit('Daily')}
+            color={ selectedRepeatHabit === 'Daily' ? "#74B084" : "#E3EED9" }
         />
         <Button
             title="Weekly"
-            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
-            color="#E3EED9"
+            onPress={() => setSelectedRepeatHabit('Weekly')}
+            color={ selectedRepeatHabit === 'Weekly' ? "#74B084" : "#E3EED9" }
         />
         <Button
             title="Monthly"
-            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
-            color="#E3EED9"
+            onPress={() => setSelectedRepeatHabit('Monthly')}
+            color={ selectedRepeatHabit === 'Monthly' ? "#74B084" : "#E3EED9" }
         />
         <Button
             title="Custom"
-            onPress={() => dailyIsExpanded(!dailyIsExpanded)}
-            color="#E3EED9"
+            onPress={() => setSelectedRepeatHabit('Custom')}
+            color={ selectedRepeatHabit === 'Custom' ? "#74B084" : "#E3EED9" }
         />
       </View>
 
+        {/* Expanded Content */}
+        {selectedRepeatHabit === 'Daily' && (
+           <View style={styles.expandedContent}>
+                <Text>Daily text here</Text>
+           </View>
+        )}
+
+        {selectedRepeatHabit === 'Weekly' && (
+          <View style={styles.expandedContent}>
+            <Text>Weekly text here</Text>
+          </View>
+        )}
+
+        {selectedRepeatHabit === 'Monthly' && (
+            <View style={styles.expandedContent}>
+              <Text>Monthly text here</Text>
+            </View>
+        )}
+
+        {selectedRepeatHabit === 'Custom' && (
+            <View style={styles.expandedContent}>
+              <Text>Custom text here</Text>
+            </View>
+        )}
+
+      {/* Advanced Settings */}
+      <View style={styles.line} />
+      <Text>Advanced Settings</Text>
 
     </View>
   );
