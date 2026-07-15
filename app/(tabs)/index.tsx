@@ -69,7 +69,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Habit Garden</Text>
-      <p>Todo</p>
+      <Text>Todo</Text>
 
       {habits.length === 0 ? (
         <Text style={styles.emptyText}>No habits yet — create your first one!</Text>
