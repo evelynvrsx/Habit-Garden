@@ -341,10 +341,10 @@ export default function NewHabitScreen() {
 // Dropdown data
 const dropdownTimeNumber = [
   { label: '1', value: '1' },
-  { label: '15', value: '2' },
-  { label: '30', value: '3' },
-  { label: '45', value: '4' },
-  { label: '60', value: '5' },
+  { label: '15', value: '15' },
+  { label: '30', value: '30' },
+  { label: '45', value: '45' },
+  { label: '60', value: '60' },
 ];
 
 const dropdownTimeType = [
