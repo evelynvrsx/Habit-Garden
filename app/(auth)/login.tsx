@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 
@@ -10,9 +10,19 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) Alert.alert('Login failed', error.message);
+    console.log('Attempting login with:', email);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('Login result:', { session: !!data.session, error });
+      if (error) {
+        Alert.alert('Login failed', error.message);
+      }
+    } catch (err: any) {
+      console.error('Login unexpected error:', err);
+      Alert.alert('Error', err.message || 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,7 +43,17 @@ export default function LoginScreen() {
         secureTextEntry
         style={styles.input}
       />
-      <Button title={loading ? 'Logging in...' : 'Log In'} onPress={handleLogin} disabled={loading} style={styles.loginButton}/>
+      <TouchableOpacity
+        style={[styles.loginButton, loading && { opacity: 0.7 }]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.loginButtonText}>Log In</Text>
+        )}
+      </TouchableOpacity>
       <Link href="/(auth)/signup">
         <Text style={styles.link}>Don't have an account? Sign up</Text>
       </Link>
