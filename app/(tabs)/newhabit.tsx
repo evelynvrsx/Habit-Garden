@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Switch, TextInput, TouchableOpacity, ScrollView
 import { Dropdown } from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
-import { saveHabit, Habit } from '../../store/habits';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 // Icon list
 const ICON_LIST = ['📚', '🏃', '💧', '🧘', '🍎', '💪', '✍️', '🎨', '🎵', '🌿', '🧠', '🛌'];
@@ -111,14 +112,34 @@ function DateRow({
   );
 }
 
+const TARGET_UNIT_MAP: Record<string, string> = {
+  '1': 'seconds',
+  '2': 'minutes',
+  '3': 'hours',
+};
+
+const REPEAT_SCHEDULE_MAP: Record<string, object> = {
+  Daily: { type: 'daily' },
+  Weekly: { type: 'weekly', days: [] },
+  Monthly: { type: 'monthly', days: [] },
+  Custom: { type: 'custom', interval: null },
+};
+
+function toISODate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
 // Main Screen
 export default function NewHabitScreen() {
+  const { session } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [habitTitle, setHabitTitle] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('📚');
   const [iconPickerVisible, setIconPickerVisible] = useState(false);
 
   const [targetEnabled, setTargetEnabled] = useState(false);
-  const [targetNumber, setTargetNumber] = useState<string | null>('3');
+  const [targetNumber, setTargetNumber] = useState<string | null>('30');
   const [targetType, setTargetType] = useState<string | null>('2');
 
   const [selectedRepeat, setSelectedRepeat] = useState<'Daily' | 'Weekly' | 'Monthly' | 'Custom'>('Daily');
@@ -138,35 +159,72 @@ export default function NewHabitScreen() {
       return;
     }
 
-    const habit: Habit = {
-      id: Date.now().toString(),
+    if (!session?.user) {
+      Alert.alert('Not signed in', 'Please log in again and try creating your habit.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const insertPayload: Record<string, unknown> = {
+      user_id: session.user.id,
       title: habitTitle.trim(),
       icon: selectedIcon,
-      targetEnabled,
-      targetNumber: targetEnabled ? targetNumber : null,
-      targetType: targetEnabled ? targetType : null,
-      repeat: selectedRepeat,
+      repeat_schedule: REPEAT_SCHEDULE_MAP[selectedRepeat],
+      reminder: reminderEnabled,
+      start_date: startDateEnabled ? toISODate(startDate) : toISODate(new Date()),
     };
 
-    await saveHabit(habit);
+    if (targetEnabled) {
+      insertPayload.target = Number(targetNumber ?? '30');
+      insertPayload.target_unit = TARGET_UNIT_MAP[targetType ?? '2'];
+    }
 
-    // Reset all fields
-    setHabitTitle('');
-    setSelectedIcon('📚');
-    setTargetEnabled(false);
-    setTargetNumber('3');
-    setTargetType('2');
-    setSelectedRepeat('Daily');
-    setShowAdvanced(false);
-    setReminderEnabled(false);
-    setStartDateEnabled(false);
-    setEndDateEnabled(false);
-    setStartDate(new Date());
-    setEndDate(new Date());
+    if (endDateEnabled) {
+      insertPayload.end_date = toISODate(endDate);
+    }
 
-    Alert.alert('Habit created!', 'Your new habit has been added.', [
-      { text: 'OK' }
-    ]);
+    try {
+      console.log('Sending payload to Supabase:', insertPayload);
+      const { data, error } = await supabase.from('habits').insert([insertPayload]).select();
+
+      if (error) {
+        console.error('Supabase Insert Error:', error);
+        Alert.alert(
+          'Could not create habit',
+          `Database Error: ${error.message} (${error.code})`
+        );
+        return;
+      }
+
+      console.log('Habit created successfully:', data);
+
+      // Reset all fields
+      setHabitTitle('');
+      setSelectedIcon('📚');
+      setTargetEnabled(false);
+      setTargetNumber('3');
+      setTargetType('2');
+      setSelectedRepeat('Daily');
+      setShowAdvanced(false);
+      setReminderEnabled(false);
+      setStartDateEnabled(false);
+      setEndDateEnabled(false);
+      setStartDate(new Date());
+      setEndDate(new Date());
+
+      Alert.alert('Habit created!', 'Your new habit has been added.', [
+        { text: 'OK' },
+      ]);
+    } catch (err) {
+      console.log('Network error creating habit:', err);
+      Alert.alert(
+        'No connection',
+        'Could not reach the server. Check your internet connection and try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -323,8 +381,15 @@ export default function NewHabitScreen() {
         )}
 
         {/* Create Habit Button */}
-        <TouchableOpacity style={styles.createButton} activeOpacity={0.85} onPress={handleCreateHabit}>
-          <Text style={styles.createButtonText}>Create Habit</Text>
+        <TouchableOpacity
+          style={[styles.createButton, isSubmitting && { opacity: 0.6 }]}
+          activeOpacity={0.85}
+          onPress={handleCreateHabit}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.createButtonText}>
+            {isSubmitting ? 'Creating...' : 'Create Habit'}
+          </Text>
         </TouchableOpacity>
 
       </ScrollView>

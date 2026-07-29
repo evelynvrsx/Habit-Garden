@@ -1,28 +1,32 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { loadHabits, Habit } from '../../store/habits';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
-// Maps the stored value keys back to human-readable labels
-const TIME_NUMBER_LABELS: Record<string, string> = {
-  '1': '1',
-  '2': '15',
-  '3': '30',
-  '4': '45',
-  '5': '60',
+type Habit = {
+  id: string;
+  user_id: string;
+  title: string;
+  icon: string | null;
+  target: number | null;
+  target_unit: string | null;
+  repeat_schedule: { type: string; [key: string]: unknown };
+  reminder: boolean;
+  start_date: string;
+  end_date: string | null;
 };
 
 const TIME_TYPE_LABELS: Record<string, string> = {
-  '1': 'sec',
-  '2': 'min',
-  '3': 'hr',
+  seconds: 'sec',
+  minutes: 'min',
+  hours: 'hr',
 };
 
 function formatTarget(habit: Habit): string | null {
-  if (!habit.targetEnabled || !habit.targetNumber || !habit.targetType) return null;
-  const num = TIME_NUMBER_LABELS[habit.targetNumber] ?? habit.targetNumber;
-  const type = TIME_TYPE_LABELS[habit.targetType] ?? '';
-  return `${num} ${type}`;
+  if (!habit.target || !habit.target_unit) return null;
+  const type = TIME_TYPE_LABELS[habit.target_unit] ?? habit.target_unit;
+  return `${habit.target} ${type}`;
 }
 
 function HabitCard({ habit }: { habit: Habit }) {
@@ -57,13 +61,38 @@ function HabitCard({ habit }: { habit: Habit }) {
 }
 
 export default function HomeScreen() {
+  const { session } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Reload habits every time this screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      loadHabits().then(setHabits);
-    }, [])
+      let isActive = true;
+
+      async function fetchHabits() {
+        if (!session?.user) return;
+
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('habits')
+          .select('*')
+          .order('start_date', { ascending: true });
+
+        if (!isActive) return;
+
+        if (error) {
+          console.log('Error loading habits:', error.message);
+          Alert.alert('Could not load habits', 'Please check your connection and try again.');
+        } else {
+          setHabits(data ?? []);
+        }
+        setLoading(false);
+      }
+
+      fetchHabits();
+      return () => { isActive = false; };
+    }, [session?.user])
   );
 
   return (
