@@ -68,11 +68,13 @@ function HabitCard({
   isCompleted,
   isPending,
   onToggle,
+  onEdit,
 }: {
   habit: Habit;
   isCompleted: boolean;
   isPending: boolean;
   onToggle: () => void;
+  onEdit: () => void;
 }) {
   const target = formatTarget(habit);
 
@@ -97,7 +99,7 @@ function HabitCard({
         </View>
       )}
 
-      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={onEdit}>
         <Text style={styles.iconBtnText}>✏️</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
@@ -106,7 +108,6 @@ function HabitCard({
     </View>
   );
 }
-
 export default function HomeScreen() {
   const { session } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -285,6 +286,7 @@ export default function HomeScreen() {
                 isCompleted={completedIds.has(item.habit.id)}
                 isPending={pendingIds.has(item.habit.id)}
                 onToggle={() => toggleComplete(item.habit)}
+                onEdit={() => router.push(`/edithabit/${item.habit.id}`)}
               />
             )
           }
