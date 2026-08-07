@@ -23,33 +23,80 @@ const TIME_TYPE_LABELS: Record<string, string> = {
   hours: 'hr',
 };
 
-function formatTarget(habit: Habit): string | null {
-  if (!habit.target || !habit.target_unit) return null;
-  const type = TIME_TYPE_LABELS[habit.target_unit] ?? habit.target_unit;
-  return `${habit.target} ${type}`;
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_NAMES = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+];
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function toISODate(date: Date): string {
+  return date.toISOString().split('T')[0];
 }
 
-function HabitCard({ habit }: { habit: Habit }) {
+function formatHeaderDate(date: Date): string {
+  const weekday = WEEKDAY_NAMES[date.getDay()];
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = MONTH_NAMES[date.getMonth()];
+  return `${weekday}, ${day} ${month} ${date.getFullYear()}`;
+}
+
+function getCurrentWeekDates(): Date[] {
+  const today = new Date();
+  const day = today.getDay(); // 0 = Sunday
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+function formatTarget(habit: Habit): string | null {
+  if (!habit.target || !habit.target_unit) return null;
+  const unit = TIME_TYPE_LABELS[habit.target_unit] ?? habit.target_unit;
+  return `${habit.target} ${unit}`;
+}
+
+function HabitCard({
+  habit,
+  isCompleted,
+  isPending,
+  onToggle,
+}: {
+  habit: Habit;
+  isCompleted: boolean;
+  isPending: boolean;
+  onToggle: () => void;
+}) {
   const target = formatTarget(habit);
 
   return (
     <View style={styles.card}>
-      {/* Checkbox */}
-      <TouchableOpacity style={styles.checkbox} activeOpacity={0.7} />
+      <TouchableOpacity
+        style={[styles.checkbox, isCompleted && styles.checkboxChecked]}
+        activeOpacity={0.7}
+        onPress={onToggle}
+        disabled={isPending}
+      >
+        {isCompleted && <Text style={styles.checkboxTick}>✓</Text>}
+      </TouchableOpacity>
 
-      {/* Title */}
       <Text style={styles.habitTitle} numberOfLines={1}>
         {habit.icon} {habit.title}
       </Text>
 
-      {/* Target badge */}
       {target && (
         <View style={styles.targetBadge}>
           <Text style={styles.targetText}>{target}</Text>
         </View>
       )}
 
-      {/* Edit / Delete */}
       <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
         <Text style={styles.iconBtnText}>✏️</Text>
       </TouchableOpacity>
@@ -63,62 +110,188 @@ function HabitCard({ habit }: { habit: Habit }) {
 export default function HomeScreen() {
   const { session } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
-  // Reload habits every time this screen comes into focus
+  const today = new Date();
+  const todayStr = toISODate(today);
+  const weekDates = getCurrentWeekDates();
+
+  const fetchData = useCallback(async () => {
+    if (!session?.user) return;
+
+    setLoading(true);
+
+    const [habitsResult, logsResult] = await Promise.all([
+      supabase
+        .from('habits')
+        .select('*')
+        .lte('start_date', todayStr)
+        .or(`end_date.is.null,end_date.gte.${todayStr}`)
+        .order('start_date', { ascending: true }),
+      supabase
+        .from('habit_logs')
+        .select('habit_id')
+        .eq('date', todayStr)
+        .eq('completed', true),
+    ]);
+
+    if (habitsResult.error) {
+      console.log('Error loading habits:', habitsResult.error.message);
+      Alert.alert('Could not load habits', 'Please check your connection and try again.');
+    } else {
+      setHabits(habitsResult.data ?? []);
+    }
+
+    if (logsResult.error) {
+      console.log('Error loading today\'s logs:', logsResult.error.message);
+    } else {
+      setCompletedIds(new Set((logsResult.data ?? []).map((l) => l.habit_id)));
+    }
+
+    setLoading(false);
+  }, [session?.user, todayStr]);
+
   useFocusEffect(
     useCallback(() => {
-      let isActive = true;
-
-      async function fetchHabits() {
-        if (!session?.user) return;
-
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('habits')
-          .select('*')
-          .order('start_date', { ascending: true });
-
-        if (!isActive) return;
-
-        if (error) {
-          console.log('Error loading habits:', error.message);
-          Alert.alert('Could not load habits', 'Please check your connection and try again.');
-        } else {
-          setHabits(data ?? []);
-        }
-        setLoading(false);
-      }
-
-      fetchHabits();
-      return () => { isActive = false; };
-    }, [session?.user])
+      fetchData();
+    }, [fetchData])
   );
+
+  async function toggleComplete(habit: Habit) {
+    const wasCompleted = completedIds.has(habit.id);
+
+    // Optimistic update
+    setCompletedIds((prev) => {
+      const next = new Set(prev);
+      if (wasCompleted) next.delete(habit.id);
+      else next.add(habit.id);
+      return next;
+    });
+    setPendingIds((prev) => new Set(prev).add(habit.id));
+
+    const { error } = wasCompleted
+      ? await supabase
+          .from('habit_logs')
+          .delete()
+          .eq('habit_id', habit.id)
+          .eq('date', todayStr)
+      : await supabase
+          .from('habit_logs')
+          .upsert(
+            { habit_id: habit.id, date: todayStr, completed: true },
+            { onConflict: 'habit_id,date' }
+          );
+
+    if (error) {
+      console.log('Error toggling habit completion:', error.message);
+      // Revert on failure
+      setCompletedIds((prev) => {
+        const next = new Set(prev);
+        if (wasCompleted) next.add(habit.id);
+        else next.delete(habit.id);
+        return next;
+      });
+      Alert.alert('Could not update habit', 'Check your connection and try again.');
+    }
+
+    setPendingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(habit.id);
+      return next;
+    });
+  }
+
+  const todoHabits = habits.filter((h) => !completedIds.has(h.id));
+  const completedHabits = habits.filter((h) => completedIds.has(h.id));
+  const totalCount = habits.length;
+  const completedCount = completedHabits.length;
+  const progressPct = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Habit Garden</Text>
-      <Text>Todo</Text>
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View style={styles.avatar} />
+        <View>
+          <Text style={styles.title}>Today</Text>
+          <Text style={styles.dateText}>{formatHeaderDate(today)}</Text>
+        </View>
+      </View>
 
-      {habits.length === 0 ? (
+      {/* Week strip */}
+      <View style={styles.weekCard}>
+        {weekDates.map((d, i) => {
+          const isToday = toISODate(d) === todayStr;
+          return (
+            <View key={i} style={styles.dayColumn}>
+              <Text style={styles.dayLabel}>{DAY_LABELS[i]}</Text>
+              <View style={[styles.dayCircle, isToday && styles.dayCircleActive]}>
+                <Text style={[styles.dayNumber, isToday && styles.dayNumberActive]}>
+                  {d.getDate()}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Progress summary */}
+      <View style={styles.progressCard}>
+        <View style={styles.progressLeft}>
+          <View style={styles.progressBarTrack}>
+            <View style={[styles.progressBarFill, { width: `${progressPct}%` }]} />
+          </View>
+          <Text style={styles.progressText}>
+            {completedCount} / {totalCount} completed
+          </Text>
+        </View>
+        <View style={styles.progressPlantBox} />
+      </View>
+
+      {/* Add habit */}
+      <TouchableOpacity
+        style={styles.addButton}
+        activeOpacity={0.85}
+        onPress={() => router.push('/newhabit')}
+      >
+        <Text style={styles.addButtonText}>+ Add Habit</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.habitsHeading}>Habits</Text>
+
+      {totalCount === 0 && !loading ? (
         <Text style={styles.emptyText}>No habits yet — create your first one!</Text>
       ) : (
         <FlatList
-          data={habits}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <HabitCard habit={item} />}
+          data={[
+            { type: 'header', label: 'To do' },
+            ...todoHabits.map((h) => ({ type: 'habit' as const, habit: h })),
+            ...(completedHabits.length > 0
+              ? [{ type: 'header', label: 'Completed' }]
+              : []),
+            ...completedHabits.map((h) => ({ type: 'habit' as const, habit: h })),
+          ]}
+          keyExtractor={(item, index) =>
+            item.type === 'header' ? `header-${item.label}` : item.habit.id
+          }
+          renderItem={({ item }) =>
+            item.type === 'header' ? (
+              <Text style={styles.sectionLabel}>{item.label}</Text>
+            ) : (
+              <HabitCard
+                habit={item.habit}
+                isCompleted={completedIds.has(item.habit.id)}
+                isPending={pendingIds.has(item.habit.id)}
+                onToggle={() => toggleComplete(item.habit)}
+              />
+            )
+          }
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
       )}
-
-      <TouchableOpacity
-        style={styles.createButton}
-        activeOpacity={0.85}
-        onPress={() => router.push('/newhabit')}
-      >
-        <Text style={styles.createButtonText}>+ New Habit</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -134,16 +307,126 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: GREEN_MID,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: 24,
+  },
+  dateText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  weekCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  dayColumn: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  dayLabel: {
+    fontSize: 12,
+    color: '#888',
+  },
+  dayCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayCircleActive: {
+    backgroundColor: GREEN_LIGHT,
+    borderWidth: 2,
+    borderColor: GREEN_DARK,
+  },
+  dayNumber: {
+    fontSize: 13,
+    color: '#1A1A1A',
+  },
+  dayNumberActive: {
+    color: GREEN_DARK,
+    fontWeight: '700',
+  },
+  progressCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GREEN_LIGHT,
+    borderRadius: 16,
+    padding: 16,
+    gap: 16,
+    marginBottom: 16,
+  },
+  progressLeft: {
+    flex: 1,
+    gap: 8,
+  },
+  progressBarTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: GREEN_DARK,
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 13,
+    color: '#1A1A1A',
+    fontWeight: '500',
+  },
+  progressPlantBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: GREEN_MID,
+  },
+  addButton: {
+    backgroundColor: GREEN_DARK,
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  habitsHeading: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 12,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
+    marginTop: 4,
   },
   emptyText: {
-    flex: 1,
     textAlign: 'center',
-    marginTop: 80,
+    marginTop: 60,
     color: '#9E9E9E',
     fontSize: 15,
   },
@@ -151,8 +434,6 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 100,
   },
-
-  // Habit card — matches the screenshot style
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -174,6 +455,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#BDBDBD',
     backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: GREEN_DARK,
+    borderColor: GREEN_DARK,
+  },
+  checkboxTick: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   habitTitle: {
     flex: 1,
@@ -199,27 +491,5 @@ const styles = StyleSheet.create({
   },
   iconBtnText: {
     fontSize: 16,
-  },
-
-  // FAB-style create button
-  createButton: {
-    position: 'absolute',
-    bottom: 32,
-    left: 20,
-    right: 20,
-    backgroundColor: GREEN_DARK,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#2E7D32',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  createButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
   },
 });
