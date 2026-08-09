@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase'; // adjust path to match your project
+import { supabase } from '../../lib/supabase';
 
 export default function ProfileScreen() {
   const [loading, setLoading] = useState(false);
@@ -10,7 +10,6 @@ export default function ProfileScreen() {
     const { error } = await supabase.auth.signOut();
     setLoading(false);
     if (error) Alert.alert('Logout failed', error.message);
-    // AuthContext picks it up, _layout redirects to /login
   };
 
   return (
