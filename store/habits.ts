@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
 
 export type Habit = {
   id: string;
@@ -25,4 +26,13 @@ export async function saveHabit(habit: Habit): Promise<void> {
   const existing = await loadHabits();
   const updated = [...existing, habit];
   await AsyncStorage.setItem(KEY, JSON.stringify(updated));
+}
+
+export async function deleteHabit(habitId: string) {
+  const { error } = await supabase
+    .from('habits')
+    .delete()
+    .eq('id', habitId);
+
+  if (error) throw error;
 }

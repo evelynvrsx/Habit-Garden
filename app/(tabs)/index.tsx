@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { deleteHabit } from '../../store/habits';
 
 type Habit = {
   id: string;
@@ -69,12 +70,14 @@ function HabitCard({
   isPending,
   onToggle,
   onEdit,
+  onDelete,
 }: {
   habit: Habit;
   isCompleted: boolean;
   isPending: boolean;
   onToggle: () => void;
   onEdit: () => void;
+  onDelete: () => void;
 }) {
   const target = formatTarget(habit);
 
@@ -102,7 +105,7 @@ function HabitCard({
       <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={onEdit}>
         <Text style={styles.iconBtnText}>✏️</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={onDelete}>
         <Text style={styles.iconBtnText}>🗑️</Text>
       </TouchableOpacity>
     </View>
@@ -159,6 +162,37 @@ export default function HomeScreen() {
       fetchData();
     }, [fetchData])
   );
+
+  function handleDeletePress(habit: Habit) {
+    Alert.alert(
+      'Delete Habit',
+      `Are you sure you want to delete "${habit.title}"? This will also delete all its logged history.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => confirmDelete(habit.id),
+        },
+      ]
+    );
+  }
+
+  async function confirmDelete(habitId: string) {
+    try {
+      await deleteHabit(habitId);
+      setHabits((prev) => prev.filter((h) => h.id !== habitId));
+      // also clean up derived state so it doesn't linger in completed/pending sets
+      setCompletedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(habitId);
+        return next;
+      });
+    } catch (err) {
+      console.log('Error deleting habit:', err);
+      Alert.alert('Could not delete habit', 'Please check your connection and try again.');
+    }
+  }
 
   async function toggleComplete(habit: Habit) {
     const wasCompleted = completedIds.has(habit.id);
@@ -287,6 +321,7 @@ export default function HomeScreen() {
                 isPending={pendingIds.has(item.habit.id)}
                 onToggle={() => toggleComplete(item.habit)}
                 onEdit={() => router.push(`/edithabit/${item.habit.id}`)}
+                onDelete={() => handleDeletePress(item.habit)}
               />
             )
           }
