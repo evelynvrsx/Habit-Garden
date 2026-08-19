@@ -7,6 +7,7 @@ import HabitForm, { HabitFormValues } from '../../components/HabitForm';
 
 export default function NewHabitScreen() {
   const { session } = useAuth();
+  const [formKey, setFormKey] = React.useState(0);
 
   async function handleCreate(values: HabitFormValues) {
     if (!session?.user) {
@@ -25,9 +26,15 @@ export default function NewHabitScreen() {
     }
 
     Alert.alert('Habit created!', 'Your new habit has been added.', [
-      { text: 'OK', onPress: () => router.back() },
+      {
+        text: 'OK',
+        onPress: () => {
+          setFormKey((prev) => prev + 1);
+          router.back();
+        },
+      },
     ]);
   }
 
-  return <HabitForm onSubmit={handleCreate} submitLabel="Create Habit" />;
+  return <HabitForm key={formKey} onSubmit={handleCreate} submitLabel="Create Habit" />;
 }
