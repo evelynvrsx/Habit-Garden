@@ -4,6 +4,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { deleteHabit } from '../../store/habits';
+import { isHabitScheduledForDate } from '../../lib/habitSchedule';
+import { RepeatSchedule } from '../../components/HabitForm';
 
 type Habit = {
   id: string;
@@ -12,7 +14,7 @@ type Habit = {
   icon: string | null;
   target: number | null;
   target_unit: string | null;
-  repeat_schedule: { type: string; [key: string]: unknown };
+  repeat_schedule: RepeatSchedule;
   reminder: boolean;
   start_date: string;
   end_date: string | null;
@@ -145,7 +147,10 @@ export default function HomeScreen() {
       console.log('Error loading habits:', habitsResult.error.message);
       Alert.alert('Could not load habits', 'Please check your connection and try again.');
     } else {
-      setHabits(habitsResult.data ?? []);
+      const dueToday = (habitsResult.data ?? []).filter((h: Habit) =>
+        isHabitScheduledForDate(h.repeat_schedule, today, h.start_date, h.end_date)
+      );
+      setHabits(dueToday);
     }
 
     if (logsResult.error) {
