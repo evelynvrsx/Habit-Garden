@@ -23,13 +23,18 @@ describe('isHabitScheduledForDate', () => {
       expect(isHabitScheduledForDate(schedule, d('2026-08-17'), '2026-08-01')).toBe(true);
     });
 
-    it('is NOT due on a non-selected day (Tuesday) — this is the bug this test guards against', () => {
+    it('is NOT due on a non-selected day (Tuesday)', () => {
       // 2026-08-18 is a Tuesday
       expect(isHabitScheduledForDate(schedule, d('2026-08-18'), '2026-08-01')).toBe(false);
     });
 
     it('is due on the other selected day (Wednesday)', () => {
       expect(isHabitScheduledForDate(schedule, d('2026-08-19'), '2026-08-01')).toBe(true);
+    });
+
+    it('is NOT due before the start date, even if the day of week matches', () => {
+      // 2026-08-10 is a Monday, but start date is 2026-08-15
+      expect(isHabitScheduledForDate(schedule, d('2026-08-10'), '2026-08-15')).toBe(false);
     });
   });
 
@@ -68,6 +73,12 @@ describe('isHabitScheduledForDate', () => {
       const s = { type: 'monthly' as const, mode: 'specific_dates' as const, dates: [31] };
       expect(isHabitScheduledForDate(s, d('2026-02-28'), '2026-01-01')).toBe(true);
     });
+
+    it('clamps the 29th, 30th, and 31st correctly in a leap year February (29 days in 2024)', () => {
+      const s = { type: 'monthly' as const, mode: 'specific_dates' as const, dates: [29, 30, 31] };
+      expect(isHabitScheduledForDate(s, d('2024-02-29'), '2024-01-01')).toBe(true);
+      expect(isHabitScheduledForDate(s, d('2024-02-28'), '2024-01-01')).toBe(false);
+    });
   });
 
   describe('monthly - flexible_count', () => {
@@ -78,6 +89,18 @@ describe('isHabitScheduledForDate', () => {
         isHabitScheduledForDate(schedule, d(`2026-04-${String(day).padStart(2, '0')}`), '2026-01-01')
       );
       expect(dueDates.length).toBe(3);
+      // Logic: Math.round((i * 30) / 3) + 1 for i=0,1,2 -> 1, 11, 21
+      expect(dueDates).toEqual([1, 11, 21]);
+    });
+
+    it('spreads occurrences across February (28 days)', () => {
+      const schedule = { type: 'monthly' as const, mode: 'flexible_count' as const, count: 4 };
+      const dueDates = Array.from({ length: 28 }, (_, i) => i + 1).filter((day) =>
+        isHabitScheduledForDate(schedule, d(`2026-02-${String(day).padStart(2, '0')}`), '2026-01-01')
+      );
+      expect(dueDates.length).toBe(4);
+      // Logic: Math.round((i * 28) / 4) + 1 for i=0,1,2,3 -> 1, 8, 15, 22
+      expect(dueDates).toEqual([1, 8, 15, 22]);
     });
   });
 
@@ -89,10 +112,23 @@ describe('isHabitScheduledForDate', () => {
       expect(isHabitScheduledForDate(schedule, d('2026-08-04'), '2026-08-01')).toBe(true); // day 3
     });
 
+    it('works across a month boundary for every N days', () => {
+      const schedule = { type: 'custom' as const, interval: 5, unit: 'days' as const };
+      expect(isHabitScheduledForDate(schedule, d('2026-08-28'), '2026-08-28')).toBe(true);
+      expect(isHabitScheduledForDate(schedule, d('2026-09-02'), '2026-08-28')).toBe(true); // 5 days later
+    });
+
     it('is due every N weeks starting from the start date', () => {
       const schedule = { type: 'custom' as const, interval: 2, unit: 'weeks' as const };
+      expect(isHabitScheduledForDate(schedule, d('2026-08-01'), '2026-08-01')).toBe(true);
       expect(isHabitScheduledForDate(schedule, d('2026-08-15'), '2026-08-01')).toBe(true); // 14 days later
       expect(isHabitScheduledForDate(schedule, d('2026-08-08'), '2026-08-01')).toBe(false); // 7 days later
+    });
+
+    it('interval of 1 day is effectively daily', () => {
+      const schedule = { type: 'custom' as const, interval: 1, unit: 'days' as const };
+      expect(isHabitScheduledForDate(schedule, d('2026-08-01'), '2026-01-01')).toBe(true);
+      expect(isHabitScheduledForDate(schedule, d('2026-08-02'), '2026-01-01')).toBe(true);
     });
   });
 
