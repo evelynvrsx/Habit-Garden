@@ -31,21 +31,19 @@ function addDaysToISO(iso: string, delta: number): string {
 }
 
 // Calculate daily streak
-function calculateDailyStreak(logs: HabitLog[], referenceDate: Date): number {
+function calculateDailyStreak(habit: StreakHabit, logs: HabitLog[], referenceDate: Date): number {
   const completedDates = new Set(
     logs.filter((l) => l.completed).map((l) => l.date)
   );
 
   let cursor = dateToLocalISO(referenceDate);
 
-  // Today not logged yet isn't a "miss" until the day is over —
-  // start from yesterday so an in-progress streak survives.
   if (!completedDates.has(cursor)) {
     cursor = addDaysToISO(cursor, -1);
   }
 
   let streak = 0;
-  while (completedDates.has(cursor)) {
+  while (cursor >= habit.start_date && completedDates.has(cursor)) {
     streak += 1;
     cursor = addDaysToISO(cursor, -1);
   }
@@ -60,7 +58,7 @@ export function calculateStreak(
 ): number {
   switch (habit.repeat_schedule.type) {
     case 'daily':
-      return calculateDailyStreak(logs, referenceDate);
+      return calculateDailyStreak(habit, logs, referenceDate);
     case 'weekly':
     case 'monthly':
     case 'custom':
