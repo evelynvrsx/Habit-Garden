@@ -68,4 +68,21 @@ describe('calculateStreak - daily habits', () => {
     const logs = [log('2026-08-19', false)];
     expect(calculateStreak(dailyHabit, logs, referenceDate)).toBe(0);
   });
+
+  it('does not count logs before the habit start_date even with no gap', () => {
+    const referenceDate = new Date('2026-08-19T12:00:00');
+    const habitStartedRecently: StreakHabit = {
+      repeat_schedule: { type: 'daily' },
+      start_date: '2026-08-17',
+      end_date: null,
+    };
+    const logs = [
+      log('2026-08-15'),
+      log('2026-08-16'),
+      log('2026-08-17'), // habit starts here
+      log('2026-08-18'),
+      log('2026-08-19'),
+    ];
+    expect(calculateStreak(habitStartedRecently, logs, referenceDate)).toBe(3); // 17, 18, 19 only
+  });
 });
