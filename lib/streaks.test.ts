@@ -119,3 +119,48 @@ describe('calculateStreak - weekly habits', () => {
     expect(calculateStreak(weeklyHabit, logs, referenceDate)).toBe(1);
   });
 });
+
+// Monthly test
+describe('calculateStreak - monthly habits', () => {
+  const monthlyHabit: StreakHabit = {
+    repeat_schedule: { type: 'monthly', mode: 'specific_dates', dates: [1, 15] },
+    start_date: '2026-01-01',
+    end_date: null,
+  };
+
+  it('returns 0 with no history', () => {
+    const referenceDate = new Date('2026-08-15T12:00:00');
+    expect(calculateStreak(monthlyHabit, [], referenceDate)).toBe(0);
+  });
+
+  it('skips non-due days and counts consecutive due days', () => {
+    const referenceDate = new Date('2026-08-15T12:00:00');
+    const logs = [log('2026-07-15'), log('2026-08-01'), log('2026-08-15')];
+    expect(calculateStreak(monthlyHabit, logs, referenceDate)).toBe(3);
+  });
+
+  it('breaks the streak if a due date was missed', () => {
+    const referenceDate = new Date('2026-08-15T12:00:00');
+    // 2026-08-01 (due) was not logged
+    const logs = [log('2026-07-15'), log('2026-08-15')];
+    expect(calculateStreak(monthlyHabit, logs, referenceDate)).toBe(1);
+  });
+
+  it('gives grace if today is due but not logged yet', () => {
+    const referenceDate = new Date('2026-08-15T09:00:00');
+    const logs = [log('2026-08-01')];
+    expect(calculateStreak(monthlyHabit, logs, referenceDate)).toBe(1);
+  });
+
+  it('caps a scheduled date-of-month to the last real day of shorter months', () => {
+    // dates: [31] — April only has 30 days, so it should fall on April 30
+    const shortMonthHabit: StreakHabit = {
+      repeat_schedule: { type: 'monthly', mode: 'specific_dates', dates: [31] },
+      start_date: '2026-01-01',
+      end_date: null,
+    };
+    const referenceDate = new Date('2026-05-31T12:00:00');
+    const logs = [log('2026-04-30'), log('2026-05-31')];
+    expect(calculateStreak(shortMonthHabit, logs, referenceDate)).toBe(2);
+  });
+});
