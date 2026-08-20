@@ -86,3 +86,36 @@ describe('calculateStreak - daily habits', () => {
     expect(calculateStreak(habitStartedRecently, logs, referenceDate)).toBe(3); // 17, 18, 19 only
   });
 });
+
+// Weekly schedule streak test
+describe('calculateStreak - weekly habits', () => {
+  const weeklyHabit: StreakHabit = {
+    repeat_schedule: { type: 'weekly', mode: 'specific_days', days: ['Mon', 'Wed', 'Fri'] },
+    start_date: '2026-01-01',
+    end_date: null,
+  };
+
+  it('returns 0 with no history', () => {
+    const referenceDate = new Date('2026-08-19T12:00:00'); // a Wednesday
+    expect(calculateStreak(weeklyHabit, [], referenceDate)).toBe(0);
+  });
+
+  it('skips non-due days without breaking the streak', () => {
+    // Mon 08-17, Wed 08-19 are due; Tue/Thu/weekend are not
+    const referenceDate = new Date('2026-08-19T12:00:00'); // Wed
+    const logs = [log('2026-08-17'), log('2026-08-19')]; // Mon + Wed, both completed
+    expect(calculateStreak(weeklyHabit, logs, referenceDate)).toBe(2);
+  });
+
+  it('breaks the streak if a due day was missed', () => {
+    const referenceDate = new Date('2026-08-19T12:00:00'); // Wed
+    const logs = [log('2026-08-14')]; // Fri before, but Mon 08-17 (due) was skipped
+    expect(calculateStreak(weeklyHabit, logs, referenceDate)).toBe(0);
+  });
+
+  it('gives grace if today is due but not logged yet', () => {
+    const referenceDate = new Date('2026-08-19T09:00:00'); // Wed, due, not yet logged
+    const logs = [log('2026-08-17')]; // Mon completed
+    expect(calculateStreak(weeklyHabit, logs, referenceDate)).toBe(1);
+  });
+});

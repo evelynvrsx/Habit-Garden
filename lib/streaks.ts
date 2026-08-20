@@ -1,4 +1,5 @@
 import { RepeatSchedule } from '../components/HabitForm';
+import { isHabitScheduledForDate } from './habitSchedule';
 
 export type HabitLog = {
   habit_id: string;
@@ -30,20 +31,39 @@ function addDaysToISO(iso: string, delta: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
-// Calculate daily streak
-function calculateDailyStreak(habit: StreakHabit, logs: HabitLog[], referenceDate: Date): number {
+// Calculate Generic Streak
+function calculateGenericStreak(
+  habit: StreakHabit,
+  logs: HabitLog[],
+  referenceDate: Date
+): number {
   const completedDates = new Set(
     logs.filter((l) => l.completed).map((l) => l.date)
   );
 
+  function isDue(iso: string): boolean {
+    return isHabitScheduledForDate(
+      habit.repeat_schedule,
+      new Date(iso),
+      habit.start_date,
+      habit.end_date
+    );
+  }
+
   let cursor = dateToLocalISO(referenceDate);
 
-  if (!completedDates.has(cursor)) {
+  // Grace period: only forgive an unlogged "today" if today was actually due.
+  if (isDue(cursor) && !completedDates.has(cursor)) {
     cursor = addDaysToISO(cursor, -1);
   }
 
   let streak = 0;
-  while (cursor >= habit.start_date && completedDates.has(cursor)) {
+  while (cursor >= habit.start_date) {
+    if (!isDue(cursor)) {
+      cursor = addDaysToISO(cursor, -1);
+      continue;
+    }
+    if (!completedDates.has(cursor)) break;
     streak += 1;
     cursor = addDaysToISO(cursor, -1);
   }
@@ -56,14 +76,5 @@ export function calculateStreak(
   logs: HabitLog[],
   referenceDate: Date = new Date()
 ): number {
-  switch (habit.repeat_schedule.type) {
-    case 'daily':
-      return calculateDailyStreak(habit, logs, referenceDate);
-    case 'weekly':
-    case 'monthly':
-    case 'custom':
-      throw new Error(
-        `calculateStreak: '${habit.repeat_schedule.type}' habits are not implemented yet`
-      );
-  }
+  return calculateGenericStreak(habit, logs, referenceDate);
 }
