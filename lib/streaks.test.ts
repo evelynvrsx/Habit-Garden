@@ -164,3 +164,47 @@ describe('calculateStreak - monthly habits', () => {
     expect(calculateStreak(shortMonthHabit, logs, referenceDate)).toBe(2);
   });
 });
+
+// Custom test
+describe('calculateStreak - custom habits', () => {
+  const customHabit: StreakHabit = {
+    repeat_schedule: { type: 'custom', interval: 3, unit: 'days' },
+    start_date: '2026-08-01', // due on Aug 1, 4, 7, 10, 13, 16, 19...
+    end_date: null,
+  };
+
+  it('returns 0 with no history', () => {
+    const referenceDate = new Date('2026-08-19T12:00:00');
+    expect(calculateStreak(customHabit, [], referenceDate)).toBe(0);
+  });
+
+  it('skips non-due days and counts consecutive due days', () => {
+    const referenceDate = new Date('2026-08-19T12:00:00');
+    const logs = [log('2026-08-13'), log('2026-08-16'), log('2026-08-19')];
+    expect(calculateStreak(customHabit, logs, referenceDate)).toBe(3);
+  });
+
+  it('breaks the streak if a due day was missed', () => {
+    const referenceDate = new Date('2026-08-19T12:00:00');
+    // 2026-08-16 (due) not logged
+    const logs = [log('2026-08-13'), log('2026-08-19')];
+    expect(calculateStreak(customHabit, logs, referenceDate)).toBe(1);
+  });
+
+  it('gives grace if today is due but not logged yet', () => {
+    const referenceDate = new Date('2026-08-19T09:00:00');
+    const logs = [log('2026-08-16')];
+    expect(calculateStreak(customHabit, logs, referenceDate)).toBe(1);
+  });
+
+  it('handles weeks as the interval unit', () => {
+    const biweeklyHabit: StreakHabit = {
+      repeat_schedule: { type: 'custom', interval: 2, unit: 'weeks' },
+      start_date: '2026-01-01', // due every 14 days: Jan1, Jan15, Jan29...
+      end_date: null,
+    };
+    const referenceDate = new Date('2026-01-29T12:00:00');
+    const logs = [log('2026-01-01'), log('2026-01-15'), log('2026-01-29')];
+    expect(calculateStreak(biweeklyHabit, logs, referenceDate)).toBe(3);
+  });
+});
