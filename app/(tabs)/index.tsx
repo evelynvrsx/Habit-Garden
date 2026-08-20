@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { deleteHabit } from '../../store/habits';
 import { isHabitScheduledForDate } from '../../lib/habitSchedule';
 import { RepeatSchedule } from '../../components/HabitForm';
+import { calculateStreak, HabitLog, StreakHabit } from '../../lib/streaks';
 
 type Habit = {
   id: string;
@@ -118,18 +119,20 @@ export default function HomeScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const today = new Date();
-  const todayStr = toISODate(today);
-  const weekDates = getCurrentWeekDates();
+  const today = useMemo(() => new Date(), []);
+  const todayStr = useMemo(() => toISODate(today), [today]);
+  const weekDates = useMemo(() => getCurrentWeekDates(), []);
 
   const fetchData = useCallback(async () => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      setLoading(false);
+      return;
+    }
 
-    setLoading(true);
-
-    const [habitsResult, logsResult] = await Promise.all([
+    const [habitsResult, logsResult, allLogsResult] = await Promise.all([
       supabase
         .from('habits')
         .select('*')
@@ -141,16 +144,28 @@ export default function HomeScreen() {
         .select('habit_id')
         .eq('date', todayStr)
         .eq('completed', true),
+      supabase
+        .from('habit_logs')
+        .select('habit_id, date, completed')
+        .eq('completed', true)
+        .order('date', { ascending: false }),
     ]);
 
     if (habitsResult.error) {
       console.log('Error loading habits:', habitsResult.error.message);
       Alert.alert('Could not load habits', 'Please check your connection and try again.');
     } else {
-      const dueToday = (habitsResult.data ?? []).filter((h: Habit) =>
+      const allHabits = habitsResult.data ?? [];
+      const dueToday = allHabits.filter((h: Habit) =>
         isHabitScheduledForDate(h.repeat_schedule, today, h.start_date, h.end_date)
       );
       setHabits(dueToday);
+
+      if (allLogsResult.data) {
+        const logs = allLogsResult.data as HabitLog[];
+        const streaks = allHabits.map(h => calculateStreak(h as StreakHabit, logs.filter(l => l.habit_id === h.id), today));
+        setStreak(streaks.length > 0 ? Math.max(...streaks) : 0);
+      }
     }
 
     if (logsResult.error) {
@@ -160,7 +175,7 @@ export default function HomeScreen() {
     }
 
     setLoading(false);
-  }, [session?.user, todayStr]);
+  }, [session?.user, todayStr, today]);
 
   useFocusEffect(
     useCallback(() => {
@@ -234,6 +249,8 @@ export default function HomeScreen() {
         return next;
       });
       Alert.alert('Could not update habit', 'Check your connection and try again.');
+    } else {
+      fetchData();
     }
 
     setPendingIds((prev) => {
@@ -254,9 +271,13 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.avatar} />
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.title}>Today</Text>
           <Text style={styles.dateText}>{formatHeaderDate(today)}</Text>
+        </View>
+        <View style={styles.streakCard}>
+          <Text style={styles.streakEmoji}>🔥</Text>
+          <Text style={styles.streakNumber}>{streak}</Text>
         </View>
       </View>
 
@@ -369,6 +390,30 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 13,
     color: '#666',
+  },
+  streakCard: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  streakEmoji: {
+    fontSize: 18,
+    marginBottom: -2,
+  },
+  streakNumber: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FF7043',
   },
   weekCard: {
     flexDirection: 'row',
