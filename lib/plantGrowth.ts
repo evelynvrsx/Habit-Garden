@@ -1,6 +1,6 @@
 import { calculateGrowthStreak, StreakHabit, HabitLog } from './streaks';
 
-export type PlantStage = 'seed' | 'sprout' | 'flower' | 'tree' | 'tree_fruiting';
+export type PlantStage = 'seed' | 'sprout' | 'flower' | 'tree' | 'bonus';
 
 // Thresholds are in completions, not time.
 // Each plant stage growth depends on how many times user has completed the habit on
@@ -10,12 +10,12 @@ const STAGE_THRESHOLDS: ReadonlyArray<{ minCompletions: number; stage: PlantStag
   { minCompletions: 3, stage: 'sprout' },
   { minCompletions: 10, stage: 'flower' },
   { minCompletions: 25, stage: 'tree' },
-  { minCompletions: 50, stage: 'tree_fruiting' },
+  { minCompletions: 50, stage: 'bonus' },
 ];
 
 /**
  * Pure lookup: completion count -> plant stage.
- * Caps at 'tree_fruiting' for anything beyond 50 — never throws, never
+ * Caps at 'bonus' for anything beyond 50 — never throws, never
  * goes past the last stage.
  */
 export function getPlantStage(completionCount: number): PlantStage {

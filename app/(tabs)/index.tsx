@@ -7,6 +7,7 @@ import { deleteHabit } from '../../store/habits';
 import { isHabitScheduledForDate } from '../../lib/habitSchedule';
 import { RepeatSchedule } from '../../components/HabitForm';
 import { calculateStreak, HabitLog, StreakHabit } from '../../lib/streaks';
+import { PlantSpecies } from '../../lib/plantSpecies';
 
 type Habit = {
   id: string;
@@ -19,6 +20,7 @@ type Habit = {
   reminder: boolean;
   start_date: string;
   end_date: string | null;
+  plant_species: PlantSpecies;
 };
 
 const TIME_TYPE_LABELS: Record<string, string> = {
