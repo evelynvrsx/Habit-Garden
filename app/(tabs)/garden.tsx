@@ -58,10 +58,10 @@ export default function GardenScreen() {
           habit={item.habit}
           species={item.species}
           stage={item.stage}
-          onPress={(habit) => router.push(`/edithabit/${habit.id}`)}
+          onPress={(habit) => router.push(`/habitdetails/${habit.id}`)}
         />
       )}
-      contentContainerStyle={{ padding: 12, alignItems: 'center' }}
+      contentContainerStyle={{ padding: 8, alignItems: 'center' }}
     />
   );
 }

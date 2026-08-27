@@ -31,7 +31,7 @@ export function PlotTile({ habit, species, stage, onPress }: PlotTileProps) {
 }
 
 const styles = StyleSheet.create({
-  plot: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center', margin: 4 },
-  sprite: { width: 64, height: 64 },
+  plot: { width: 115, height: 115, alignItems: 'center', justifyContent: 'center', margin: 2 },
+  sprite: { width: 100, height: 100 },
   label: { fontSize: 11, marginTop: 2, textAlign: 'center' },
 });
