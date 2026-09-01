@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { FlatList, View, Text, StyleSheet } from 'react-native';
+import { FlatList, View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -42,30 +42,52 @@ export default function GardenScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <Text>Loading garden...</Text>
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={plots}
-      numColumns={3}
-      keyExtractor={(item, index) => item.habit?.id ?? `empty-${index}`}
-      renderItem={({ item }) => (
-        <PlotTile
-          habit={item.habit}
-          species={item.species}
-          stage={item.stage}
-          onPress={(habit) => router.push(`/habitdetails/${habit.id}`)}
-        />
-      )}
-      contentContainerStyle={{ padding: 8, alignItems: 'center' }}
-    />
+    <ImageBackground
+      source={require('../../assets/images/background5.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <FlatList
+        data={plots}
+        numColumns={3}
+        keyExtractor={(item, index) => item.habit?.id ?? `empty-${index}`}
+        renderItem={({ item }) => (
+          <PlotTile
+            habit={item.habit}
+            species={item.species}
+            stage={item.stage}
+            onPress={(habit) => router.push(`/habitdetails/${habit.id}`)}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F4FBEF',
+  },
+  listContent: {
+    padding: 16,
+    paddingTop: 60,
+    alignItems: 'center',
+  },
 });
