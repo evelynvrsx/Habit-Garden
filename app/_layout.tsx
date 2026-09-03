@@ -34,7 +34,15 @@ function RootLayoutNav() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        headerTitleAlign: 'center',
+        headerTintColor: '#2E7D32',
+        headerStyle: { backgroundColor: '#FFFFFF' },
+        headerTitleStyle: { fontWeight: 'bold' },
+      }}
+    >
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
     </Stack>

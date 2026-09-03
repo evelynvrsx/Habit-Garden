@@ -2,23 +2,30 @@ import { Pressable, Image, Text, StyleSheet } from 'react-native';
 import { getPlantSprite } from '../lib/plantSprites';
 import { PlantSpecies } from '../lib/plantSpecies';
 import { PlantStage } from '../lib/plantGrowth';
-import { GardenHabit } from '../lib/useGardenPlots';
 
-type PlotTileProps = {
-  habit: GardenHabit | null;
-  species: PlantSpecies | null;
-  stage: PlantStage | null;
-  onPress: (habit: GardenHabit) => void;
+// Minimal shape PlotTile actually needs to render
+// and stored snapshot plots satisfy this.
+export type DisplayHabit = {
+  id: string;
+  title: string;
 };
 
-export function PlotTile({ habit, species, stage, onPress }: PlotTileProps) {
+type PlotTileProps<T extends DisplayHabit> = {
+  habit: T | null;
+  species: PlantSpecies | null;
+  stage: PlantStage | null;
+  onPress?: (habit: T) => void; // snapshots of tiles
+};
+
+export function PlotTile<T extends DisplayHabit>({ habit, species, stage, onPress }: PlotTileProps<T>) {
   const sprite = getPlantSprite(species, stage);
+  const interactive = !!habit && !!onPress;
 
   return (
     <Pressable
-      onPress={habit ? () => onPress(habit) : undefined}
+      onPress={interactive ? () => onPress!(habit!) : undefined}
       style={styles.plot}
-      disabled={!habit}
+      disabled={!interactive}
     >
       <Image source={sprite} style={styles.sprite} resizeMode="contain" />
       {habit && (

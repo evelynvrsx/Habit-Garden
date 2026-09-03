@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import HabitForm, { HabitFormValues } from '../../components/HabitForm';
+import { assignRandomSpecies } from '../../lib/plantSpecies';
 
 export default function NewHabitScreen() {
   const { session } = useAuth();
@@ -17,7 +18,13 @@ export default function NewHabitScreen() {
 
     const { error } = await supabase
       .from('habits')
-      .insert([{ ...values, user_id: session.user.id }]);
+      .insert([
+        {
+          ...values,
+          user_id: session.user.id,
+          plant_species: assignRandomSpecies(),
+        },
+      ]);
 
     if (error) {
       console.error('Supabase insert error:', error);

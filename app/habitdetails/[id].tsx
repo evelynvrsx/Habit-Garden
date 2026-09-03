@@ -145,7 +145,7 @@ export default function HabitDetailsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { padding: 24 },
+  content: { padding: 24, paddingTop: 40 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { alignItems: 'center', marginBottom: 32 },
   iconWrapper: {

@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { FlatList, View, Text, StyleSheet, ImageBackground } from 'react-native';
+import { FlatList, View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { PlotTile } from '../../components/PlotTile';
 import { useGardenPlots, GardenHabit } from '../../lib/useGardenPlots';
 import { HabitLog } from '../../lib/streaks';
+import { captureSnapshotIfNeeded } from '../../lib/gardenSnapshots';
 
 export default function GardenScreen() {
   const { session } = useAuth();
@@ -29,6 +30,10 @@ export default function GardenScreen() {
 
     if (!habitsResult.error) setHabits(habitsResult.data ?? []);
     if (!logsResult.error) setLogs((logsResult.data as HabitLog[]) ?? []);
+    if (session.user && !habitsResult.error && !logsResult.error) {
+      captureSnapshotIfNeeded(session.user.id, habitsResult.data ?? [], (logsResult.data as HabitLog[]) ?? []);
+    }
+
     setLoading(false);
   }, [session?.user]);
 
@@ -50,10 +55,13 @@ export default function GardenScreen() {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/background5.png')}
+      source={require('../../assets/images/background.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
+    <TouchableOpacity style={styles.snapshotButton} onPress={() => router.push('../weeklysnapshots')}>
+      <Text style={styles.snapshotButtonText}>Weekly Snapshots</Text>
+    </TouchableOpacity>
       <FlatList
         data={plots}
         numColumns={3}
@@ -87,7 +95,27 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingTop: 60,
+    paddingTop: 20,
     alignItems: 'center',
+  },
+  snapshotButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    marginHorizontal: 40,
+    marginTop: 60,
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#A5D6A7',
+  },
+  snapshotButtonText: {
+    color: '#2E7D32',
+    fontSize: 15,
+    fontWeight: '700'
   },
 });
