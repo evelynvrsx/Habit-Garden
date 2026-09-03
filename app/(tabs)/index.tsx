@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -7,6 +7,7 @@ import { deleteHabit } from '../../store/habits';
 import { isHabitScheduledForDate } from '../../lib/habitSchedule';
 import { RepeatSchedule } from '../../components/HabitForm';
 import { calculateStreak, HabitLog, StreakHabit } from '../../lib/streaks';
+import { PlantSpecies } from '../../lib/plantSpecies';
 
 type Habit = {
   id: string;
@@ -19,6 +20,7 @@ type Habit = {
   reminder: boolean;
   start_date: string;
   end_date: string | null;
+  plant_species: PlantSpecies;
 };
 
 const TIME_TYPE_LABELS: Record<string, string> = {
@@ -126,11 +128,15 @@ export default function HomeScreen() {
   const todayStr = useMemo(() => toISODate(today), [today]);
   const weekDates = useMemo(() => getCurrentWeekDates(), []);
 
+  const fetchCountRef = useRef(0);
+
   const fetchData = useCallback(async () => {
     if (!session?.user) {
       setLoading(false);
       return;
     }
+
+    const fetchId = ++fetchCountRef.current;
 
     const [habitsResult, logsResult, allLogsResult] = await Promise.all([
       supabase
@@ -150,6 +156,8 @@ export default function HomeScreen() {
         .eq('completed', true)
         .order('date', { ascending: false }),
     ]);
+
+    if (fetchId !== fetchCountRef.current) return;
 
     if (habitsResult.error) {
       console.log('Error loading habits:', habitsResult.error.message);
@@ -226,6 +234,9 @@ export default function HomeScreen() {
     });
     setPendingIds((prev) => new Set(prev).add(habit.id));
 
+    // Invalidate any background fetches that started before this user action
+    fetchCountRef.current++;
+
     const { error } = wasCompleted
       ? await supabase
           .from('habit_logs')
@@ -242,6 +253,7 @@ export default function HomeScreen() {
     if (error) {
       console.log('Error toggling habit completion:', error.message);
       // Revert on failure
+      fetchCountRef.current++;
       setCompletedIds((prev) => {
         const next = new Set(prev);
         if (wasCompleted) next.add(habit.id);
@@ -250,7 +262,7 @@ export default function HomeScreen() {
       });
       Alert.alert('Could not update habit', 'Check your connection and try again.');
     } else {
-      fetchData();
+      await fetchData();
     }
 
     setPendingIds((prev) => {
