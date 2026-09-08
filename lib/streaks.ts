@@ -1,6 +1,7 @@
 import { RepeatSchedule } from '../components/HabitForm';
 import { isHabitScheduledForDate } from './habitSchedule';
 import { HabitLog } from './types';
+import { toLocalISOString } from './dateUtils';
 
 export type { HabitLog };
 
@@ -10,12 +11,8 @@ export type StreakHabit = {
   end_date: string | null;
 };
 
-function dateToLocalISO(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+// ... remove the local function and use toLocalISOString instead ...
+
 
 function addDaysToISO(iso: string, delta: number): string {
   const [y, m, d] = iso.split('-').map(Number);
@@ -35,10 +32,10 @@ function calculateGenericStreak(
   const completedDates = new Set(logs.filter((l) => l.completed).map((l) => l.date));
 
   function isDue(iso: string): boolean {
-    return isHabitScheduledForDate(habit.repeat_schedule, new Date(iso), habit.start_date, habit.end_date);
+    return isHabitScheduledForDate(habit.repeat_schedule, new Date(iso + 'T00:00:00'), habit.start_date, habit.end_date);
   }
 
-  let cursor = dateToLocalISO(referenceDate);
+  let cursor = toLocalISOString(referenceDate);
 
   if (isDue(cursor) && !completedDates.has(cursor)) {
     cursor = addDaysToISO(cursor, -1);
@@ -74,10 +71,10 @@ export function calculateGrowthStreak(
   const completedDates = new Set(logs.filter((l) => l.completed).map((l) => l.date));
 
   function isDue(iso: string): boolean {
-    return isHabitScheduledForDate(habit.repeat_schedule, new Date(iso), habit.start_date, habit.end_date);
+    return isHabitScheduledForDate(habit.repeat_schedule, new Date(iso + 'T00:00:00'), habit.start_date, habit.end_date);
   }
 
-  const endISO = dateToLocalISO(referenceDate);
+  const endISO = toLocalISOString(referenceDate);
   let cursor = habit.start_date;
   let growth = 0;
 

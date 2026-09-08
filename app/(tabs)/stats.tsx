@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Habit, HabitLog } from '../../lib/types';
 import { calculateOverallCompletionRate, calculateHeadlineStreak, getHabitSummaries, getCalendarDayStatuses, DayStatus } from '../../lib/stats';
+import { toLocalISOString } from '../../lib/dateUtils';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -115,21 +116,6 @@ export default function StatsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionHeading}>Habits</Text>
-      <View style={styles.habitList}>
-        {summaries.length === 0 && (
-          <Text style={styles.emptyText}>No habits yet — add one to start tracking.</Text>
-        )}
-        {summaries.map((s) => (
-          <View key={s.id} style={styles.habitRow}>
-            <Text style={styles.habitTitle}>{s.title}</Text>
-            <Text style={styles.habitMeta}>
-              🔥 {s.currentStreak}d · {Math.round(s.completionRate)}%
-            </Text>
-          </View>
-        ))}
-      </View>
-
       <View style={styles.calendarCard}>
         <View style={styles.calendarHeader}>
           <TouchableOpacity onPress={() => goToMonth(-1)} hitSlop={10}>
@@ -149,6 +135,8 @@ export default function StatsScreen() {
           ))}
         </View>
 
+        <CalendarLegend />
+
         <CalendarGrid
           year={visibleMonth.year}
           month={visibleMonth.month}
@@ -156,7 +144,45 @@ export default function StatsScreen() {
           today={today}
         />
       </View>
+
+      <Text style={styles.sectionHeading}>Habits</Text>
+      <View style={styles.habitList}>
+        {summaries.length === 0 && (
+          <Text style={styles.emptyText}>No habits yet — add one to start tracking.</Text>
+        )}
+        {summaries.map((s) => (
+          <View key={s.id} style={styles.habitRow}>
+            <Text style={styles.habitTitle}>{s.title}</Text>
+            <Text style={styles.habitMeta}>
+              🔥 {s.currentStreak}d · {Math.round(s.completionRate)}%
+            </Text>
+          </View>
+        ))}
+      </View>
     </ScrollView>
+  );
+}
+
+function CalendarLegend() {
+  return (
+    <View style={styles.legendRow}>
+      <View style={styles.legendItem}>
+        <View style={[styles.legendDot, styles.dayCompleted]} />
+        <Text style={styles.legendText}>Done</Text>
+      </View>
+      <View style={styles.legendItem}>
+        <View style={[styles.legendDot, styles.dayPartial]} />
+        <Text style={styles.legendText}>Partial</Text>
+      </View>
+      <View style={styles.legendItem}>
+        <View style={[styles.legendDot, styles.dayMissed]} />
+        <Text style={styles.legendText}>Missed</Text>
+      </View>
+      <View style={styles.legendItem}>
+        <View style={[styles.legendDot, styles.dayToday]} />
+        <Text style={styles.legendText}>Today</Text>
+      </View>
+    </View>
   );
 }
 
@@ -183,22 +209,25 @@ function CalendarGrid({
     cells.push({ label: prevMonthDays - i + 1, inMonth: false });
   }
   for (let d = 1; d <= daysInMonth; d++) {
-    const iso = new Date(year, month, d).toISOString().slice(0, 10);
+    const iso = toLocalISOString(new Date(year, month, d));
     cells.push({ label: d, iso, inMonth: true });
   }
   while (cells.length % 7 !== 0) {
     cells.push({ label: cells.length - leadingBlanks - daysInMonth + 1, inMonth: false });
   }
 
-  const todayIso = today.toISOString().slice(0, 10);
+  const todayIso = toLocalISOString(today);
 
   return (
     <View style={styles.grid}>
       {cells.map((cell, idx) => {
         const status = cell.iso ? dayStatuses[cell.iso] : 'none';
         const isToday = cell.iso === todayIso;
+        // Unique key based on ISO or position for blanks
+        const key = cell.iso ? `day-${cell.iso}` : `blank-${idx}`;
+
         return (
-          <View key={idx} style={styles.dayCellWrapper}>
+          <View key={key} style={styles.dayCellWrapper}>
             <View
               style={[
                 styles.dayCircle,
@@ -274,7 +303,7 @@ const styles = StyleSheet.create({
   habitMeta: { fontSize: 13, color: GREEN_MID },
   emptyText: { color: GREEN_MID, fontStyle: 'italic' },
 
-  calendarCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16 },
+  calendarCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 24 },
   calendarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -283,6 +312,16 @@ const styles = StyleSheet.create({
   },
   calendarTitle: { fontSize: 16, fontWeight: '700', color: GREEN_DARK },
   calendarNav: { fontSize: 22, color: GREEN_MID, paddingHorizontal: 8 },
+
+  legendRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 12,
+    paddingHorizontal: 4,
+  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendText: { fontSize: 11, color: GREEN_MID, fontWeight: '500' },
 
   weekdayRow: { flexDirection: 'row', marginBottom: 4 },
   weekdayLabel: { flex: 1, textAlign: 'center', fontSize: 12, color: GREEN_MID },
@@ -295,12 +334,14 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
   dayText: { fontSize: 13, color: '#1F2A24' },
   dayTextMuted: { color: '#C3CDC0' },
   dayTextOnDark: { color: '#fff', fontWeight: '700' },
-  dayCompleted: { backgroundColor: GREEN_DARK },
-  dayPartial: { borderWidth: 1.5, borderColor: GREEN_MID },
-  dayMissed: { borderWidth: 1, borderColor: '#E3B8B8' },
-  dayToday: { borderWidth: 2, borderColor: GREEN_DARK },
+  dayCompleted: { backgroundColor: GREEN_DARK, borderRadius: 15 },
+  dayPartial: { borderWidth: 1.5, borderColor: GREEN_MID, borderRadius: 15 },
+  dayMissed: { borderWidth: 1, borderColor: '#E3B8B8', borderRadius: 15 },
+  dayToday: { borderWidth: 2, borderColor: GREEN_DARK, borderRadius: 15 },
 });
