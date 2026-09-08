@@ -37,20 +37,20 @@ describe('getPlantStage — stage boundaries (completion-based)', () => {
     expect(getPlantStage(49)).toBe('tree');
   });
 
-  it('becomes bonus at 50 completions', () => {
-    expect(getPlantStage(50)).toBe('bonus');
+  it('becomes tree_fruiting at 50 completions', () => {
+    expect(getPlantStage(50)).toBe('tree_fruiting');
   });
 
-  it('caps at bonus well beyond 50 and never throws', () => {
-    expect(getPlantStage(51)).toBe('bonus');
-    expect(getPlantStage(10000)).toBe('bonus');
+  it('caps at tree_fruiting well beyond 50 and never throws', () => {
+    expect(getPlantStage(51)).toBe('tree_fruiting');
+    expect(getPlantStage(10000)).toBe('tree_fruiting');
   });
 
   it('is one completion short of a boundary — stays at the previous stage', () => {
     expect(getPlantStage(2)).not.toBe('sprout');
     expect(getPlantStage(9)).not.toBe('flower');
     expect(getPlantStage(24)).not.toBe('tree');
-    expect(getPlantStage(49)).not.toBe('bonus');
+    expect(getPlantStage(49)).not.toBe('tree_fruiting');
   });
 });
 
@@ -93,7 +93,7 @@ describe('getPlantStageFromHabit — missed day pause behaviour', () => {
     // Weekly habit (Mondays only): 3 completed Mondays takes 3 weeks of
     // calendar time to reach the same 'sprout' stage a daily habit reaches
     const weeklyHabit: StreakHabit = {
-      repeat_schedule: { type: 'weekly', mode: 'specific_days', days: ['Mon'] },
+      repeat_schedule: { type: 'weekly', days: ['Mon'] },
       start_date: '2026-01-01', // a Thursday
       end_date: null,
     };

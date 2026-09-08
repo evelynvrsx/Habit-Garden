@@ -8,7 +8,6 @@ import { isHabitScheduledForDate } from '../../lib/habitSchedule';
 import { RepeatSchedule } from '../../components/HabitForm';
 import { calculateStreak, HabitLog, StreakHabit } from '../../lib/streaks';
 import { PlantSpecies } from '../../lib/plantSpecies';
-import { toLocalISOString } from '../../lib/dateUtils';
 
 type Habit = {
   id: string;
@@ -38,6 +37,10 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
+
+function toISODate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
 
 function formatHeaderDate(date: Date): string {
   const weekday = WEEKDAY_NAMES[date.getDay()];
@@ -122,7 +125,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
 
   const today = useMemo(() => new Date(), []);
-  const todayStr = useMemo(() => toLocalISOString(today), [today]);
+  const todayStr = useMemo(() => toISODate(today), [today]);
   const weekDates = useMemo(() => getCurrentWeekDates(), []);
 
   const fetchCountRef = useRef(0);
@@ -293,7 +296,7 @@ export default function HomeScreen() {
       {/* Week strip */}
       <View style={styles.weekCard}>
         {weekDates.map((d, i) => {
-          const isToday = toLocalISOString(d) === todayStr;
+          const isToday = toISODate(d) === todayStr;
           return (
             <View key={i} style={styles.dayColumn}>
               <Text style={styles.dayLabel}>{DAY_LABELS[i]}</Text>
