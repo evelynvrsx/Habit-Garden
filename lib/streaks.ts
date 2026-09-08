@@ -1,11 +1,8 @@
 import { RepeatSchedule } from '../components/HabitForm';
 import { isHabitScheduledForDate } from './habitSchedule';
+import { HabitLog } from './types';
 
-export type HabitLog = {
-  habit_id: string;
-  date: string; // 'YYYY-MM-DD'
-  completed: boolean;
-};
+export type { HabitLog };
 
 export type StreakHabit = {
   repeat_schedule: RepeatSchedule;
@@ -20,7 +17,6 @@ function dateToLocalISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-// Because places like NZ has daylight saving
 function addDaysToISO(iso: string, delta: number): string {
   const [y, m, d] = iso.split('-').map(Number);
   const utc = new Date(Date.UTC(y, m - 1, d));
@@ -31,28 +27,19 @@ function addDaysToISO(iso: string, delta: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
-// Calculate Generic Streak
 function calculateGenericStreak(
   habit: StreakHabit,
   logs: HabitLog[],
   referenceDate: Date
 ): number {
-  const completedDates = new Set(
-    logs.filter((l) => l.completed).map((l) => l.date)
-  );
+  const completedDates = new Set(logs.filter((l) => l.completed).map((l) => l.date));
 
   function isDue(iso: string): boolean {
-    return isHabitScheduledForDate(
-      habit.repeat_schedule,
-      new Date(iso),
-      habit.start_date,
-      habit.end_date
-    );
+    return isHabitScheduledForDate(habit.repeat_schedule, new Date(iso), habit.start_date, habit.end_date);
   }
 
   let cursor = dateToLocalISO(referenceDate);
 
-  // Grace period: only forgive an unlogged "today" if today was actually due.
   if (isDue(cursor) && !completedDates.has(cursor)) {
     cursor = addDaysToISO(cursor, -1);
   }
@@ -79,33 +66,15 @@ export function calculateStreak(
   return calculateGenericStreak(habit, logs, referenceDate);
 }
 
-/**
- * Growth streak for the plant-growth feature (Issue 8).
- *
- * Unlike calculateStreak (which resets to 0 the moment a due day is
- * missed), this walks forward from habit.start_date to referenceDate and
- * counts total completed due-days, treating a missed due-day as a PAUSE:
- * it doesn't increment, but it doesn't reset the count either.
- *
- * Non-scheduled days are skipped entirely — they neither grow nor pause
- * the plant.
- */
 export function calculateGrowthStreak(
   habit: StreakHabit,
   logs: HabitLog[],
   referenceDate: Date = new Date()
 ): number {
-  const completedDates = new Set(
-    logs.filter((l) => l.completed).map((l) => l.date)
-  );
+  const completedDates = new Set(logs.filter((l) => l.completed).map((l) => l.date));
 
   function isDue(iso: string): boolean {
-    return isHabitScheduledForDate(
-      habit.repeat_schedule,
-      new Date(iso),
-      habit.start_date,
-      habit.end_date
-    );
+    return isHabitScheduledForDate(habit.repeat_schedule, new Date(iso), habit.start_date, habit.end_date);
   }
 
   const endISO = dateToLocalISO(referenceDate);
@@ -116,7 +85,6 @@ export function calculateGrowthStreak(
     if (isDue(cursor) && completedDates.has(cursor)) {
       growth += 1;
     }
-    // missed due-day or non-due day: no increment, no reset
     cursor = addDaysToISO(cursor, 1);
   }
 
