@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { GardenHabit } from './useGardenPlots';
+import { Habit } from './types';
 import { getPlantStageFromHabit } from './plantGrowth';
 import { HabitLog } from './streaks';
 import { PlantSpecies } from './plantSpecies';
@@ -46,7 +46,7 @@ export function previousMonday(mondayISO: string): string {
  */
 export async function captureSnapshotIfNeeded(
   userId: string,
-  habits: GardenHabit[],
+  habits: Habit[],
   logs: HabitLog[]
 ): Promise<void> {
   if (habits.length === 0) return;
