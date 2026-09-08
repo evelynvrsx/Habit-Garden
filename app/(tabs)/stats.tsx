@@ -37,9 +37,6 @@ export default function StatsScreen() {
     setLoading(true);
 
     try {
-      // Mirrors app/(tabs)/index.tsx: habit_logs has no user_id column,
-      // RLS scopes rows to the signed-in user. We need full log history here
-      // (not just today's) for completion rate / streaks / the calendar.
       const [{ data: habitsData, error: habitsError }, { data: logsData, error: logsError }] = await Promise.all([
         supabase.from('habits').select('*').eq('user_id', user.id),
         supabase.from('habit_logs').select('habit_id, date, completed').eq('completed', true),
