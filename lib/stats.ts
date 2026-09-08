@@ -1,6 +1,7 @@
 import { Habit, HabitLog } from './types';
 import { isHabitScheduledForDate } from './habitSchedule';
 import { calculateStreak } from './streaks';
+import { toLocalISOString } from './dateUtils';
 
 export type DayStatus = 'completed' | 'partial' | 'missed' | 'none';
 
@@ -10,12 +11,6 @@ export interface HabitSummary {
   icon?: string | null;
   currentStreak: number;
   completionRate: number;
-}
-
-// Matches Home screen's write convention
-// convention; this keeps the calendar consistent with what's actually written to habit_logs today.
-function toDateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
 }
 
 function scheduledOn(habit: Habit, date: Date): boolean {
@@ -51,7 +46,7 @@ export function calculateCompletionRate(
   while (cursor <= asOf) {
     if (scheduledOn(habit, cursor)) {
       scheduled++;
-      if (isCompletedOn(completedSet, habit.id, toDateOnly(cursor))) completed++;
+      if (isCompletedOn(completedSet, habit.id, toLocalISOString(cursor))) completed++;
     }
     cursor.setDate(cursor.getDate() + 1);
   }
@@ -77,7 +72,7 @@ export function calculateOverallCompletionRate(
     while (cursor <= asOf) {
       if (scheduledOn(habit, cursor)) {
         scheduled++;
-        if (isCompletedOn(completedSet, habit.id, toDateOnly(cursor))) completed++;
+        if (isCompletedOn(completedSet, habit.id, toLocalISOString(cursor))) completed++;
       }
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -138,7 +133,7 @@ export function getCalendarDayStatuses(
 
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
-    const iso = toDateOnly(date);
+    const iso = toLocalISOString(date);
 
     if (date > asOf) {
       result[iso] = 'none';
