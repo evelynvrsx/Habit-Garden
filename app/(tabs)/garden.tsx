@@ -4,13 +4,14 @@ import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { PlotTile } from '../../components/PlotTile';
-import { useGardenPlots, GardenHabit } from '../../lib/useGardenPlots';
+import { useGardenPlots } from '../../lib/useGardenPlots';
+import { Habit } from '../../lib/types';
 import { HabitLog } from '../../lib/streaks';
 import { captureSnapshotIfNeeded } from '../../lib/gardenSnapshots';
 
 export default function GardenScreen() {
   const { session } = useAuth();
-  const [habits, setHabits] = useState<GardenHabit[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [loading, setLoading] = useState(true);
 
