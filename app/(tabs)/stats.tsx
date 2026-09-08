@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { Dropdown } from 'react-native-element-dropdown';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Habit, HabitLog } from '../../lib/types';
@@ -9,12 +10,20 @@ import { toLocalISOString } from '../../lib/dateUtils';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+const SORT_OPTIONS = [
+  { label: 'Highest %', value: 'highest' },
+  { label: 'Lowest %', value: 'lowest' },
+  { label: 'Alphabetical', value: 'alpha' },
+  { label: 'Start Date', value: 'date' },
+];
+
 export default function StatsScreen() {
   const { session } = useAuth();
   const user = session?.user;
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('highest');
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -54,18 +63,31 @@ export default function StatsScreen() {
     }, [fetchData])
   );
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color="#2D4A34" size="large" />
-      </View>
-    );
-  }
-
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const successRate = Math.round(calculateOverallCompletionRate(habits, logs, today));
   const currentStreak = calculateHeadlineStreak(habits, logs, today);
-  const summaries = getHabitSummaries(habits, logs, today);
+
+  const summaries = useMemo(() => {
+    const raw = getHabitSummaries(habits, logs, today);
+    return [...raw].sort((a, b) => {
+      switch (sortBy) {
+        case 'highest':
+          return b.completionRate - a.completionRate;
+        case 'lowest':
+          return a.completionRate - b.completionRate;
+        case 'alpha':
+          return a.title.localeCompare(b.title);
+        case 'date': {
+          const habitA = habits.find((h) => h.id === a.id);
+          const habitB = habits.find((h) => h.id === b.id);
+          return (habitA?.start_date || '').localeCompare(habitB?.start_date || '');
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [habits, logs, sortBy, today]);
+
   const dayStatuses = getCalendarDayStatuses(
     habits,
     logs,
@@ -86,21 +108,17 @@ export default function StatsScreen() {
     });
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator color="#2D4A34" size="large" />
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={styles.tabRow}>
-        <View style={styles.tabInactive}>
-          <Text style={styles.tabInactiveText}>Today</Text>
-        </View>
-        <View style={styles.tabInactive}>
-          <Text style={styles.tabInactiveText}>Weekly</Text>
-        </View>
-        <View style={styles.tabActive}>
-          <Text style={styles.tabActiveText}>Overall</Text>
-        </View>
-      </View>
-
-      <Text style={styles.sectionHeading}>Summary</Text>
+      <Text style={styles.sectionHeading}>Overall Summary</Text>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>🔥 Current Streak</Text>
@@ -145,7 +163,19 @@ export default function StatsScreen() {
         />
       </View>
 
-      <Text style={styles.sectionHeading}>Habits</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionHeading}>Habit completion rates</Text>
+        <Dropdown
+          style={styles.sortDropdown}
+          placeholderStyle={styles.sortDropdownPlaceholder}
+          selectedTextStyle={styles.sortDropdownText}
+          data={SORT_OPTIONS}
+          labelField="label"
+          valueField="value"
+          value={sortBy}
+          onChange={(item) => setSortBy(item.value)}
+        />
+      </View>
       <View style={styles.habitList}>
         {summaries.length === 0 && (
           <Text style={styles.emptyText}>No habits yet — add one to start tracking.</Text>
@@ -302,6 +332,22 @@ const styles = StyleSheet.create({
   habitTitle: { fontSize: 14, fontWeight: '600', color: GREEN_DARK },
   habitMeta: { fontSize: 13, color: GREEN_MID },
   emptyText: { color: GREEN_MID, fontStyle: 'italic' },
+
+  sectionHeaderRow: {
+    marginBottom: 16,
+  },
+  sortDropdown: {
+    width: 130,
+    height: 32,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: GREEN_MID,
+    marginTop: 4,
+  },
+  sortDropdownPlaceholder: { fontSize: 12, color: GREEN_MID },
+  sortDropdownText: { fontSize: 12, color: GREEN_DARK, fontWeight: '600' },
 
   calendarCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 24 },
   calendarHeader: {
