@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Animated } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,8 @@ import { RepeatSchedule } from '../../components/HabitForm';
 import { calculateStreak, HabitLog, StreakHabit } from '../../lib/streaks';
 import { PlantSpecies } from '../../lib/plantSpecies';
 import { toLocalISOString } from '../../lib/dateUtils';
+import { getUserSettings } from '../../lib/userSettings';
+import { getReinforcementCopy } from '../../lib/reinforcement';
 
 type Habit = {
   id: string;
@@ -113,6 +115,7 @@ function HabitCard({
     </View>
   );
 }
+
 export default function HomeScreen() {
   const { session } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -120,6 +123,9 @@ export default function HomeScreen() {
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [reinforcementRate, setReinforcementRate] = useState(50);
+  const [reinforcementMsg, setReinforcementMsg] = useState<string | null>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const today = useMemo(() => new Date(), []);
   const todayStr = useMemo(() => toLocalISOString(today), [today]);
@@ -135,7 +141,7 @@ export default function HomeScreen() {
 
     const fetchId = ++fetchCountRef.current;
 
-    const [habitsResult, logsResult, allLogsResult] = await Promise.all([
+    const [habitsResult, logsResult, allLogsResult, settings] = await Promise.all([
       supabase
         .from('habits')
         .select('*')
@@ -152,9 +158,14 @@ export default function HomeScreen() {
         .select('habit_id, date, completed')
         .eq('completed', true)
         .order('date', { ascending: false }),
+      getUserSettings(session.user.id),
     ]);
 
     if (fetchId !== fetchCountRef.current) return;
+
+    if (settings) {
+      setReinforcementRate(settings.reinforcement_rate);
+    }
 
     if (habitsResult.error) {
       console.log('Error loading habits:', habitsResult.error.message);
@@ -169,7 +180,23 @@ export default function HomeScreen() {
       if (allLogsResult.data) {
         const logs = allLogsResult.data as HabitLog[];
         const streaks = allHabits.map(h => calculateStreak(h as StreakHabit, logs.filter(l => l.habit_id === h.id), today));
-        setStreak(streaks.length > 0 ? Math.max(...streaks) : 0);
+        const currentStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
+        setStreak(currentStreak);
+
+        // Check for missed day yesterday to show reinforcement
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const yesterdayStr = toLocalISOString(yesterday);
+
+        const hadHabitsYesterday = allHabits.some(h =>
+          isHabitScheduledForDate(h.repeat_schedule, yesterday, h.start_date, h.end_date)
+        );
+        const completedYesterday = logs.some(l => l.date === yesterdayStr);
+
+        if (hadHabitsYesterday && !completedYesterday && currentStreak === 0) {
+          setReinforcementMsg(getReinforcementCopy('missed_day', settings?.reinforcement_rate ?? 50));
+          Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+        }
       }
     }
 
@@ -180,7 +207,7 @@ export default function HomeScreen() {
     }
 
     setLoading(false);
-  }, [session?.user, todayStr, today]);
+  }, [session?.user, todayStr, today, fadeAnim]);
 
   useFocusEffect(
     useCallback(() => {
@@ -207,7 +234,6 @@ export default function HomeScreen() {
     try {
       await deleteHabit(habitId);
       setHabits((prev) => prev.filter((h) => h.id !== habitId));
-      // also clean up derived state so it doesn't linger in completed/pending sets
       setCompletedIds((prev) => {
         const next = new Set(prev);
         next.delete(habitId);
@@ -222,7 +248,6 @@ export default function HomeScreen() {
   async function toggleComplete(habit: Habit) {
     const wasCompleted = completedIds.has(habit.id);
 
-    // Optimistic update
     setCompletedIds((prev) => {
       const next = new Set(prev);
       if (wasCompleted) next.delete(habit.id);
@@ -231,7 +256,6 @@ export default function HomeScreen() {
     });
     setPendingIds((prev) => new Set(prev).add(habit.id));
 
-    // Invalidate any background fetches that started before this user action
     fetchCountRef.current++;
 
     const { error } = wasCompleted
@@ -249,7 +273,6 @@ export default function HomeScreen() {
 
     if (error) {
       console.log('Error toggling habit completion:', error.message);
-      // Revert on failure
       fetchCountRef.current++;
       setCompletedIds((prev) => {
         const next = new Set(prev);
@@ -259,6 +282,14 @@ export default function HomeScreen() {
       });
       Alert.alert('Could not update habit', 'Check your connection and try again.');
     } else {
+      if (!wasCompleted) {
+        setReinforcementMsg(getReinforcementCopy('habit_completed', reinforcementRate));
+        Animated.sequence([
+          Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.delay(3000),
+          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]).start(() => setReinforcementMsg(null));
+      }
       await fetchData();
     }
 
@@ -277,7 +308,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.avatar} />
         <View style={{ flex: 1 }}>
@@ -290,7 +320,15 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Week strip */}
+      {reinforcementMsg && (
+        <Animated.View style={[styles.reinforcementBanner, { opacity: fadeAnim }]}>
+          <Text style={styles.reinforcementText}>{reinforcementMsg}</Text>
+          <TouchableOpacity onPress={() => setReinforcementMsg(null)}>
+            <Text style={styles.closeBanner}>✕</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
       <View style={styles.weekCard}>
         {weekDates.map((d, i) => {
           const isToday = toLocalISOString(d) === todayStr;
@@ -307,7 +345,6 @@ export default function HomeScreen() {
         })}
       </View>
 
-      {/* Progress summary */}
       <View style={styles.progressCard}>
         <View style={styles.progressLeft}>
           <View style={styles.progressBarTrack}>
@@ -320,7 +357,6 @@ export default function HomeScreen() {
         <View style={styles.progressPlantBox} />
       </View>
 
-      {/* Add habit */}
       <TouchableOpacity
         style={styles.addButton}
         activeOpacity={0.85}
@@ -587,5 +623,26 @@ const styles = StyleSheet.create({
   },
   iconBtnText: {
     fontSize: 16,
+  },
+  reinforcementBanner: {
+    backgroundColor: GREEN_DARK,
+    padding: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    justifyContent: 'space-between',
+  },
+  reinforcementText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
+  },
+  closeBanner: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
