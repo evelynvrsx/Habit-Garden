@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -14,7 +14,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [streak, setStreak] = useState(0);
-  const [reinforcementRate, setReinforcementRate] = useState(50);
+  const [reinforcementRate, setReinforcementRate] = useState(100);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -23,14 +23,14 @@ export default function ProfileScreen() {
       const [{ data: habitsData }, { data: logsData }, settings] = await Promise.all([
         supabase.from('habits').select('*').eq('user_id', user.id),
         supabase.from('habit_logs').select('habit_id, date, completed').eq('completed', true),
-        getUserSettings(user.id).catch(() => ({ reinforcement_rate: 50 })), // Fallback if table doesn't exist yet
+        getUserSettings(user.id).catch(() => ({ reinforcement_mode: 100 })), // Fallback if table doesn't exist yet
       ]);
 
       if (habitsData && logsData) {
         setStreak(calculateHeadlineStreak(habitsData as Habit[], logsData as HabitLog[]));
       }
       if (settings) {
-        setReinforcementRate(settings.reinforcement_rate);
+        setReinforcementRate(settings.reinforcement_mode);
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -55,8 +55,7 @@ export default function ProfileScreen() {
     try {
       await updateReinforcementRate(user.id, newRate);
     } catch (error) {
-      console.error('Error updating reinforcement rate:', error);
-      Alert.alert('Error', 'Failed to save settings.');
+      console.warn('Error updating reinforcement rate:', error);
     } finally {
       setSaving(false);
     }
@@ -108,7 +107,8 @@ export default function ProfileScreen() {
           />
 
           <View style={styles.sliderLabels}>
-            <Text style={styles.sliderLabelText}>Direct</Text>
+            <Text style={styles.sliderLabelText}>Disciplined</Text>
+            <Text style={styles.sliderLabelText}>Balanced</Text>
             <Text style={styles.sliderLabelText}>Encouraging</Text>
           </View>
           <Text style={styles.tierHint}>
@@ -137,28 +137,23 @@ function MenuItem({ icon, label }: { icon: any; label: string }) {
 }
 
 function ReinforcementSlider({ value, onChange }: { value: number; onChange: (val: number) => void }) {
-  // Simple custom slider since we don't have @react-native-community/slider
   return (
     <View style={styles.sliderTrack}>
-      <TouchableOpacity
-        style={styles.sliderTouchable}
-        activeOpacity={1}
-        onPress={(e) => {
-          const { locationX } = e.nativeEvent;
-          // Assuming width is roughly constant or we can get it via onLayout
-          // For now, let's use a fixed width or just 3 positions
-        }}
-      >
-        <View style={[styles.sliderFill, { width: `${value}%` }]} />
-        <View style={[styles.sliderThumb, { left: `${value}%` }]} />
+      <View style={[styles.sliderFill, { width: `${value}%` }]} />
+      <View style={[styles.sliderThumb, { left: `${value}%` }]} />
 
-        {/* Simple tier selection */}
-        <View style={styles.tierButtons}>
-          <TouchableOpacity style={styles.tierButton} onPress={() => onChange(0)} />
-          <TouchableOpacity style={styles.tierButton} onPress={() => onChange(50)} />
-          <TouchableOpacity style={styles.tierButton} onPress={() => onChange(100)} />
-        </View>
-      </TouchableOpacity>
+      {/* 3 Step markers */}
+      <View style={styles.stepContainer}>
+        <View style={[styles.stepDot, value >= 0 && styles.stepDotActive]} />
+        <View style={[styles.stepDot, value >= 50 && styles.stepDotActive]} />
+        <View style={[styles.stepDot, value >= 100 && styles.stepDotActive]} />
+      </View>
+
+      <View style={styles.tierButtons}>
+        <TouchableOpacity style={styles.tierButton} onPress={() => onChange(0)} />
+        <TouchableOpacity style={styles.tierButton} onPress={() => onChange(50)} />
+        <TouchableOpacity style={styles.tierButton} onPress={() => onChange(100)} />
+      </View>
     </View>
   );
 }
@@ -228,20 +223,43 @@ const styles = StyleSheet.create({
     borderColor: GREEN_DARK,
     position: 'absolute',
     top: -6,
-    marginLeft: -12
+    marginLeft: -12,
+    zIndex: 10
   },
-  tierButtons: {
+  stepContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 2
+  },
+  stepDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#fff',
+    opacity: 0.5
+  },
+  stepDotActive: {
+    backgroundColor: '#fff',
+    opacity: 1
+  },
+  tierButtons: {
+    position: 'absolute',
+    top: -10,
+    left: -10,
+    right: -10,
+    bottom: -10,
+    flexDirection: 'row',
+    zIndex: 20
   },
   tierButton: { flex: 1 },
 
-  sliderLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  sliderLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingHorizontal: 2 },
   sliderLabelText: { fontSize: 12, color: GREEN_MID, fontWeight: '500' },
   tierHint: { fontSize: 12, color: GREEN_MID, marginTop: 8, textAlign: 'center' },
   tierName: { fontWeight: '700', color: GREEN_DARK, textTransform: 'capitalize' },

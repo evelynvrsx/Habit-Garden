@@ -123,7 +123,7 @@ export default function HomeScreen() {
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [reinforcementRate, setReinforcementRate] = useState(50);
+  const [reinforcementRate, setReinforcementRate] = useState(100);
   const [reinforcementMsg, setReinforcementMsg] = useState<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -164,7 +164,7 @@ export default function HomeScreen() {
     if (fetchId !== fetchCountRef.current) return;
 
     if (settings) {
-      setReinforcementRate(settings.reinforcement_rate);
+      setReinforcementRate(settings.reinforcement_mode);
     }
 
     if (habitsResult.error) {
@@ -194,7 +194,7 @@ export default function HomeScreen() {
         const completedYesterday = logs.some(l => l.date === yesterdayStr);
 
         if (hadHabitsYesterday && !completedYesterday && currentStreak === 0) {
-          setReinforcementMsg(getReinforcementCopy('missed_day', settings?.reinforcement_rate ?? 50));
+          setReinforcementMsg(getReinforcementCopy('missed_day', settings?.reinforcement_mode ?? 100));
           Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
         }
       }

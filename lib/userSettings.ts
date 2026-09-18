@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 export interface UserSettings {
   user_id: string;
-  reinforcement_rate: number;
+  reinforcement_mode: number;
 }
 
 export async function getUserSettings(userId: string): Promise<UserSettings> {
@@ -19,20 +19,20 @@ export async function getUserSettings(userId: string): Promise<UserSettings> {
         if (error.code === 'PGRST116') {
           const { data: newData, error: insertError } = await supabase
             .from('user_settings')
-            .insert([{ user_id: userId, reinforcement_rate: 50 }])
+            .insert([{ user_id: userId, reinforcement_mode: 100 }])
             .select()
             .single();
           if (insertError) throw insertError;
           return newData;
         }
-        return { user_id: userId, reinforcement_rate: 50 };
+        return { user_id: userId, reinforcement_mode: 100 };
       }
       throw error;
     }
     return data;
   } catch (err) {
     console.warn('getUserSettings error, returning default:', err);
-    return { user_id: userId, reinforcement_rate: 50 };
+    return { user_id: userId, reinforcement_mode: 100 };
   }
 }
 
@@ -40,7 +40,7 @@ export async function updateReinforcementRate(userId: string, rate: number): Pro
   try {
     const { error } = await supabase
       .from('user_settings')
-      .upsert({ user_id: userId, reinforcement_rate: rate, updated_at: new Date().toISOString() });
+      .upsert({ user_id: userId, reinforcement_mode: rate, updated_at: new Date().toISOString() });
 
     if (error) throw error;
   } catch (err) {
