@@ -281,7 +281,7 @@ function CalendarGrid({
   );
 }
 
-const GREEN_BG = '#E9F1E0';
+const GREEN_BG = '#F4FBEF';
 const GREEN_CARD = '#DCEACF';
 const GREEN_DARK = '#2D4A34';
 const GREEN_MID = '#6B8F5F';

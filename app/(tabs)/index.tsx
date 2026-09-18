@@ -320,15 +320,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {reinforcementMsg && (
-        <Animated.View style={[styles.reinforcementBanner, { opacity: fadeAnim }]}>
-          <Text style={styles.reinforcementText}>{reinforcementMsg}</Text>
-          <TouchableOpacity onPress={() => setReinforcementMsg(null)}>
-            <Text style={styles.closeBanner}>✕</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
-
       <View style={styles.weekCard}>
         {weekDates.map((d, i) => {
           const isToday = toLocalISOString(d) === todayStr;
@@ -400,12 +391,21 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {reinforcementMsg && (
+        <Animated.View style={[styles.reinforcementBanner, { opacity: fadeAnim }]}>
+          <Text style={styles.reinforcementText}>{reinforcementMsg}</Text>
+          <TouchableOpacity onPress={() => setReinforcementMsg(null)}>
+            <Text style={styles.closeBanner}>✕</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
     </View>
   );
 }
 
 const GREEN_DARK = '#2E7D32';
-const GREEN_LIGHT = '#E8F5E9';
+const GREEN_LIGHT = '#E9F1E0';
 const GREEN_MID = '#A5D6A7';
 
 const styles = StyleSheet.create({
@@ -625,13 +625,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   reinforcementBanner: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    zIndex: 1000,
     backgroundColor: GREEN_DARK,
-    padding: 12,
+    padding: 16,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
     justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   reinforcementText: {
     color: '#fff',

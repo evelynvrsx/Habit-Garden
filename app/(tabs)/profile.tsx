@@ -82,9 +82,6 @@ export default function ProfileScreen() {
           <Text style={styles.userName}>{user?.email?.split('@')[0] || 'User'}</Text>
           <View style={styles.headerStats}>
             <Text style={styles.headerStatText}>🔥 {streak} day streak</Text>
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsText}>⭐ 0 points</Text>
-            </View>
           </View>
         </View>
       </View>
@@ -92,9 +89,7 @@ export default function ProfileScreen() {
       {/* Account Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
-        <MenuItem icon="person-outline" label="Personal info" />
         <MenuItem icon="notifications-outline" label="Notifications" />
-        <MenuItem icon="lock-closed-outline" label="Privacy & Security" />
       </View>
 
       {/* Support Section */}
@@ -120,12 +115,6 @@ export default function ProfileScreen() {
             Current style: <Text style={styles.tierName}>{getReinforcementTier(reinforcementRate)}</Text>
           </Text>
         </View>
-
-        <MenuItem icon="help-circle-outline" label="FAQ" />
-        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-          <Text style={[styles.menuItemText, { color: '#e74c3c' }]}>Delete account</Text>
-          <Ionicons name="chevron-forward" size={20} color="#e74c3c" />
-        </TouchableOpacity>
 
         <TouchableOpacity style={[styles.logoutButton]} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Log Out</Text>
@@ -174,15 +163,15 @@ function ReinforcementSlider({ value, onChange }: { value: number; onChange: (va
   );
 }
 
-const GREEN_BG = '#F7F9F5';
+const GREEN_BG = '#F4FBEF';
 const GREEN_DARK = '#2D4A34';
 const GREEN_MID = '#6B8F5F';
 const GREEN_LIGHT = '#DCEACF';
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: GREEN_BG },
   content: { padding: 20, paddingBottom: 40 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: GREEN_BG },
 
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
   avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: GREEN_LIGHT },
@@ -190,11 +179,9 @@ const styles = StyleSheet.create({
   userName: { fontSize: 22, fontWeight: '700', color: GREEN_DARK },
   headerStats: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   headerStatText: { fontSize: 14, color: GREEN_MID, marginRight: 12 },
-  pointsBadge: { backgroundColor: GREEN_LIGHT, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-  pointsText: { fontSize: 12, color: GREEN_DARK, fontWeight: '600' },
 
   section: {
-    backgroundColor: '#FAFBF9',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
     marginBottom: 20,

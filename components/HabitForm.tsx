@@ -741,7 +741,7 @@ const GREEN_LIGHT = '#E8F5E9';
 const GREEN_MID = '#A5D6A7';
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: '#F4FBEF' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 20, gap: 12 },
   iconWrapper: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#FF7043', alignItems: 'center', justifyContent: 'center' },
