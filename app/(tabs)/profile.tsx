@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, PanResponder, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -96,12 +96,6 @@ export default function ProfileScreen() {
             <Text style={styles.headerStatText}>🔥 {streak} day streak</Text>
           </View>
         </View>
-      </View>
-
-      {/* Account Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <MenuItem icon="notifications-outline" label="Notifications" />
       </View>
 
       {/* Support Section */}

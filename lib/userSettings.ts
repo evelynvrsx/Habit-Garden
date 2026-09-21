@@ -40,7 +40,7 @@ export async function updateReinforcementRate(userId: string, rate: number): Pro
   try {
     const { error } = await supabase
       .from('user_settings')
-      .upsert({ user_id: userId, reinforcement_mode: rate, updated_at: new Date().toISOString() });
+      .upsert({ user_id: userId, reinforcement_mode: rate, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
 
     if (error) throw error;
   } catch (err) {
