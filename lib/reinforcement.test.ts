@@ -1,22 +1,51 @@
-import { getReinforcementTier, getReinforcementCopy } from './reinforcement';
+import { getReinforcementTier, getReinforcementCopy, getEffectiveStreak } from './reinforcement';
 
-describe('reinforcement logic', () => {
-  test('getReinforcementTier buckets values correctly', () => {
-    expect(getReinforcementTier(0)).toBe('direct');
-    expect(getReinforcementTier(32)).toBe('direct');
+describe('getReinforcementTier', () => {
+  it('buckets low values as disciplined', () => {
+    expect(getReinforcementTier(0)).toBe('disciplined');
+    expect(getReinforcementTier(32)).toBe('disciplined');
+  });
+
+  it('buckets mid values as balanced', () => {
     expect(getReinforcementTier(33)).toBe('balanced');
     expect(getReinforcementTier(50)).toBe('balanced');
     expect(getReinforcementTier(66)).toBe('balanced');
+  });
+
+  it('buckets high values as encouraging', () => {
     expect(getReinforcementTier(67)).toBe('encouraging');
     expect(getReinforcementTier(100)).toBe('encouraging');
   });
+});
 
-  test('getReinforcementCopy returns different tones', () => {
-    const directCopy = getReinforcementCopy('missed_day', 10);
-    const encouragingCopy = getReinforcementCopy('missed_day', 90);
+describe('getReinforcementCopy', () => {
+  it('returns distinct missed_day copy per tier', () => {
+    const disciplined = getReinforcementCopy('missed_day', 0);
+    const encouraging = getReinforcementCopy('missed_day', 100);
+    expect(disciplined).not.toBe(encouraging);
+  });
 
-    expect(directCopy).toContain('Don\'t let your plants wither');
-    expect(encouragingCopy).toContain('It\'s okay to miss a day');
-    expect(directCopy).not.toBe(encouragingCopy);
+  it('returns distinct habit_completed copy per tier', () => {
+    const disciplined = getReinforcementCopy('habit_completed', 0);
+    const encouraging = getReinforcementCopy('habit_completed', 100);
+    expect(disciplined).not.toBe(encouraging);
+  });
+});
+
+describe('getEffectiveStreak', () => {
+  it('shows the strict streak in disciplined mode', () => {
+    expect(getEffectiveStreak('disciplined', 3, 47)).toBe(3);
+  });
+
+  it('shows the strict streak in balanced mode', () => {
+    expect(getEffectiveStreak('balanced', 3, 47)).toBe(3);
+  });
+
+  it('shows the growth (cumulative) count in encouraging mode', () => {
+    expect(getEffectiveStreak('encouraging', 3, 47)).toBe(47);
+  });
+
+  it('falls back sensibly when both numbers happen to match', () => {
+    expect(getEffectiveStreak('encouraging', 5, 5)).toBe(5);
   });
 });

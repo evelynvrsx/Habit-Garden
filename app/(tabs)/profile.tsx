@@ -26,11 +26,14 @@ export default function ProfileScreen() {
         getUserSettings(user.id).catch(() => ({ reinforcement_mode: 100 })), // Fallback if table doesn't exist yet
       ]);
 
-      if (habitsData && logsData) {
-        setStreak(calculateHeadlineStreak(habitsData as Habit[], logsData as HabitLog[]));
-      }
+      const rate = settings?.reinforcement_mode ?? 100;
       if (settings) {
-        setReinforcementRate(settings.reinforcement_mode);
+        setReinforcementRate(rate);
+      }
+      if (habitsData && logsData) {
+        // Pass rate through so this agrees with Home/Stats on what the
+        // headline streak means in the current reinforcement mode.
+        setStreak(calculateHeadlineStreak(habitsData as Habit[], logsData as HabitLog[], new Date(), rate));
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -54,6 +57,16 @@ export default function ProfileScreen() {
     setSaving(true);
     try {
       await updateReinforcementRate(user.id, newRate);
+      // Streak display depends on the tier (Encouraging swaps in the
+      // cumulative growth count), so recompute it against the new rate
+      // rather than waiting for the next focus/fetch.
+      const [{ data: habitsData }, { data: logsData }] = await Promise.all([
+        supabase.from('habits').select('*').eq('user_id', user.id),
+        supabase.from('habit_logs').select('habit_id, date, completed').eq('completed', true),
+      ]);
+      if (habitsData && logsData) {
+        setStreak(calculateHeadlineStreak(habitsData as Habit[], logsData as HabitLog[], new Date(), newRate));
+      }
     } catch (error) {
       console.warn('Error updating reinforcement rate:', error);
     } finally {

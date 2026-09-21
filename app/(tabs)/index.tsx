@@ -6,11 +6,11 @@ import { useAuth } from '../../context/AuthContext';
 import { deleteHabit } from '../../store/habits';
 import { isHabitScheduledForDate } from '../../lib/habitSchedule';
 import { RepeatSchedule } from '../../components/HabitForm';
-import { calculateStreak, HabitLog, StreakHabit } from '../../lib/streaks';
+import { calculateStreak, calculateGrowthStreak, HabitLog, StreakHabit } from '../../lib/streaks';
 import { PlantSpecies } from '../../lib/plantSpecies';
 import { toLocalISOString } from '../../lib/dateUtils';
 import { getUserSettings } from '../../lib/userSettings';
-import { getReinforcementCopy } from '../../lib/reinforcement';
+import { getReinforcementCopy, getReinforcementTier, getEffectiveStreak } from '../../lib/reinforcement';
 
 type Habit = {
   id: string;
@@ -179,11 +179,25 @@ export default function HomeScreen() {
 
       if (allLogsResult.data) {
         const logs = allLogsResult.data as HabitLog[];
-        const streaks = allHabits.map(h => calculateStreak(h as StreakHabit, logs.filter(l => l.habit_id === h.id), today));
+        const tier = getReinforcementTier(settings?.reinforcement_mode ?? 100);
+        const streaks = allHabits.map((h) => {
+          const habitLogs = logs.filter((l) => l.habit_id === h.id);
+          const strict = calculateStreak(h as StreakHabit, habitLogs, today);
+          const growth = calculateGrowthStreak(h as StreakHabit, habitLogs, today);
+          return getEffectiveStreak(tier, strict, growth);
+        });
         const currentStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
         setStreak(currentStreak);
 
-        // Check for missed day yesterday to show reinforcement
+        // Check for missed day yesterday to show reinforcement.
+        // NOTE: this still checks the *strict* streak (not currentStreak
+        // above), since in Encouraging mode currentStreak is the growth
+        // count and will almost never be 0 even right after a miss.
+        const strictStreaks = allHabits.map((h) =>
+          calculateStreak(h as StreakHabit, logs.filter((l) => l.habit_id === h.id), today)
+        );
+        const currentStrictStreak = strictStreaks.length > 0 ? Math.max(...strictStreaks) : 0;
+
         const yesterday = new Date(today);
         yesterday.setDate(today.getDate() - 1);
         const yesterdayStr = toLocalISOString(yesterday);
@@ -193,7 +207,7 @@ export default function HomeScreen() {
         );
         const completedYesterday = logs.some(l => l.date === yesterdayStr);
 
-        if (hadHabitsYesterday && !completedYesterday && currentStreak === 0) {
+        if (hadHabitsYesterday && !completedYesterday && currentStrictStreak === 0) {
           setReinforcementMsg(getReinforcementCopy('missed_day', settings?.reinforcement_mode ?? 100));
           Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
         }

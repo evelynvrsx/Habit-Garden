@@ -25,3 +25,20 @@ export function getReinforcementCopy(moment: ReinforcementMoment, value: number)
   const tier = getReinforcementTier(value);
   return REINFORCEMENT_COPY[moment][tier];
 }
+
+/**
+ * Picks which streak number to display, based on reinforcement mode.
+ *
+ * NOTE: calculateGrowthStreak (lib/streaks.ts) is a cumulative lifetime-
+ * completions count, not a "streak that pauses on a miss" -- it never goes
+ * down. So Encouraging mode shows a much larger, ever-growing number next
+ * to the same fire icon that shows a small consecutive-day count in the
+ * other two tiers.
+ */
+export function getEffectiveStreak(
+  tier: ReinforcementTier,
+  strictStreak: number,
+  growthStreak: number
+): number {
+  return tier === 'encouraging' ? growthStreak : strictStreak;
+}
