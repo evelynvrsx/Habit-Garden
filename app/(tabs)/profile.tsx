@@ -129,6 +129,8 @@ export default function ProfileScreen() {
           </Text>
         </View>
 
+        <FAQSection />
+
         <TouchableOpacity style={[styles.logoutButton]} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Log Out</Text>
         </TouchableOpacity>
@@ -136,6 +138,59 @@ export default function ProfileScreen() {
     </ScrollView>
   );
 }
+
+function FAQSection() {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <View style={styles.faqContainer}>
+      <TouchableOpacity
+        style={styles.faqHeader}
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.faqHeaderLeft}>
+          <Ionicons name="help-circle-outline" size={20} color={GREEN_DARK} />
+          <Text style={styles.faqTitle}>About Reinforcement Modes</Text>
+        </View>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={GREEN_MID}
+        />
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={styles.faqContent}>
+          <View style={styles.faqItem}>
+            <Text style={styles.faqItemTitle}>Disciplined</Text>
+            <Text style={styles.faqItemText}>
+              Strict accountability. Miss one day, and your streak resets to 0.
+              Notifications are firm and direct.
+            </Text>
+          </View>
+
+          <View style={styles.faqItem}>
+            <Text style={styles.faqItemTitle}>Balanced</Text>
+            <Text style={styles.faqItemText}>
+              A safety net. You get 1 "Grace Day". Missing one day pauses your streak
+              instead of resetting it. Notifications are supportive.
+            </Text>
+          </View>
+
+          <View style={styles.faqItem}>
+            <Text style={styles.faqItemTitle}>Encouraging</Text>
+            <Text style={styles.faqItemText}>
+              Growth focused. Your streak never resets; it counts your total lifetime
+              completions. Notifications are positive and celebratory.
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
 
 function MenuItem({ icon, label }: { icon: any; label: string }) {
   return (
@@ -284,5 +339,48 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FDECEC'
   },
-  logoutButtonText: { color: '#e74c3c', fontWeight: '700', fontSize: 16 }
+  logoutButtonText: { color: '#e74c3c', fontWeight: '700', fontSize: 16 },
+
+  faqContainer: {
+    backgroundColor: '#F9FCF7',
+    borderRadius: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E8F2E3',
+    overflow: 'hidden'
+  },
+  faqHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    backgroundColor: '#F1F8E9'
+  },
+  faqHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  faqTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: GREEN_DARK
+  },
+  faqContent: {
+    padding: 12,
+    gap: 12
+  },
+  faqItem: {
+    gap: 4
+  },
+  faqItemTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: GREEN_DARK
+  },
+  faqItemText: {
+    fontSize: 12,
+    color: '#556B4B',
+    lineHeight: 16
+  }
 });
