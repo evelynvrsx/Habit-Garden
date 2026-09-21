@@ -1,6 +1,7 @@
 import { Habit, HabitLog } from './types';
 import { isHabitScheduledForDate } from './habitSchedule';
-import { calculateStreak } from './streaks';
+import { calculateStreak, calculateGrowthStreak } from './streaks';
+import { getReinforcementTier, getEffectiveStreak } from './reinforcement';
 import { toLocalISOString } from './dateUtils';
 
 export type DayStatus = 'completed' | 'partial' | 'missed' | 'none';
@@ -27,6 +28,22 @@ function buildCompletedSet(logs: HabitLog[]): Set<string> {
     if (l.completed) set.add(`${l.habit_id}_${l.date}`);
   }
   return set;
+}
+
+/** Per-habit streak, routed through reinforcement mode when provided.
+ *  With no reinforcementMode passed, behaves exactly like the old
+ *  calculateStreak-only version (backward compatible). */
+function effectiveHabitStreak(
+  habit: Habit,
+  habitLogs: HabitLog[],
+  asOf: Date,
+  reinforcementMode?: number
+): number {
+  const strict = calculateStreak(habit, habitLogs, asOf);
+  if (reinforcementMode === undefined) return strict;
+  const tier = getReinforcementTier(reinforcementMode);
+  const growth = calculateGrowthStreak(habit, habitLogs, asOf);
+  return getEffectiveStreak(tier, strict, growth);
 }
 
 /**
@@ -85,33 +102,46 @@ export function calculateOverallCompletionRate(
  * Headline "Current Streak" — same definition as the Home screen:
  * the best of each habit's own streak (via the real calculateStreak),
  * not "all habits done that day". Keeps Stats and Home from disagreeing.
+ *
+ * Pass reinforcementMode to route each habit's streak through
+ * getEffectiveStreak (Encouraging mode shows the cumulative growth count
+ * instead of the strict consecutive-day count). Omit it to keep the old,
+ * strict-only behavior.
  */
 export function calculateHeadlineStreak(
   habits: Habit[],
   logs: HabitLog[],
-  asOf: Date = new Date()
+  asOf: Date = new Date(),
+  reinforcementMode?: number
 ): number {
   if (habits.length === 0) return 0;
   const streaks = habits.map((h) =>
-    calculateStreak(h, logs.filter((l) => l.habit_id === h.id), asOf)
+    effectiveHabitStreak(h, logs.filter((l) => l.habit_id === h.id), asOf, reinforcementMode)
   );
   return Math.max(...streaks);
 }
 
 /**
  * Per-habit rows for the "Summary" list — reuses the real calculateStreak
- * per habit (same one Home screen uses).
+ * per habit (same one Home screen uses). Same reinforcementMode behavior
+ * as calculateHeadlineStreak above.
  */
 export function getHabitSummaries(
   habits: Habit[],
   logs: HabitLog[],
-  asOf: Date = new Date()
+  asOf: Date = new Date(),
+  reinforcementMode?: number
 ): HabitSummary[] {
   return habits.map((habit) => ({
     id: habit.id,
     title: habit.title,
     icon: habit.icon,
-    currentStreak: calculateStreak(habit, logs.filter((l) => l.habit_id === habit.id), asOf),
+    currentStreak: effectiveHabitStreak(
+      habit,
+      logs.filter((l) => l.habit_id === habit.id),
+      asOf,
+      reinforcementMode
+    ),
     completionRate: calculateCompletionRate(habit, logs, asOf),
   }));
 }

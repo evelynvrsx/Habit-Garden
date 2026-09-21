@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Habit, HabitLog } from '../../lib/types';
 import { calculateOverallCompletionRate, calculateHeadlineStreak, getHabitSummaries, getCalendarDayStatuses, DayStatus } from '../../lib/stats';
 import { toLocalISOString } from '../../lib/dateUtils';
+import { getUserSettings } from '../../lib/userSettings';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -22,6 +23,7 @@ export default function StatsScreen() {
   const user = session?.user;
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
+  const [reinforcementMode, setReinforcementMode] = useState(100);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('highest');
   const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -37,9 +39,10 @@ export default function StatsScreen() {
     setLoading(true);
 
     try {
-      const [{ data: habitsData, error: habitsError }, { data: logsData, error: logsError }] = await Promise.all([
+      const [{ data: habitsData, error: habitsError }, { data: logsData, error: logsError }, settings] = await Promise.all([
         supabase.from('habits').select('*').eq('user_id', user.id),
         supabase.from('habit_logs').select('habit_id, date, completed').eq('completed', true),
+        getUserSettings(user.id),
       ]);
 
       if (habitsError) throw habitsError;
@@ -47,6 +50,7 @@ export default function StatsScreen() {
 
       setHabits(habitsData ?? []);
       setLogs((logsData as HabitLog[]) ?? []);
+      if (settings) setReinforcementMode(settings.reinforcement_mode);
     } catch (err) {
       console.error('Error fetching stats data:', err);
     } finally {
@@ -62,10 +66,10 @@ export default function StatsScreen() {
 
   const today = useMemo(() => new Date(), []);
   const successRate = Math.round(calculateOverallCompletionRate(habits, logs, today));
-  const currentStreak = calculateHeadlineStreak(habits, logs, today);
+  const currentStreak = calculateHeadlineStreak(habits, logs, today, reinforcementMode);
 
   const summaries = useMemo(() => {
-    const raw = getHabitSummaries(habits, logs, today);
+    const raw = getHabitSummaries(habits, logs, today, reinforcementMode);
     return [...raw].sort((a, b) => {
       switch (sortBy) {
         case 'highest':
@@ -83,7 +87,7 @@ export default function StatsScreen() {
           return 0;
       }
     });
-  }, [habits, logs, sortBy, today]);
+  }, [habits, logs, sortBy, today, reinforcementMode]);
 
   const dayStatuses = getCalendarDayStatuses(
     habits,
@@ -281,7 +285,7 @@ function CalendarGrid({
   );
 }
 
-const GREEN_BG = '#E9F1E0';
+const GREEN_BG = '#F4FBEF';
 const GREEN_CARD = '#DCEACF';
 const GREEN_DARK = '#2D4A34';
 const GREEN_MID = '#6B8F5F';

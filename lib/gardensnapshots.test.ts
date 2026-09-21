@@ -1,3 +1,16 @@
+jest.mock('./supabase', () => ({
+  supabase: {
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          maybeSingle: jest.fn(),
+          order: jest.fn()
+        }))
+      }))
+    }))
+  }
+}));
+
 import { mostRecentMonday, previousMonday } from './gardenSnapshots';
 
 describe('mostRecentMonday', () => {
