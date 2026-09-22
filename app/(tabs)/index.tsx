@@ -353,27 +353,26 @@ export default function HomeScreen() {
         })}
       </View>
 
-      <View style={styles.progressCard}>
-        <View style={styles.progressLeft}>
-          <View style={styles.progressBarTrack}>
-            <View style={[styles.progressBarFill, { width: `${progressPct}%` }]} />
+      <View style={styles.habitsHeader}>
+        <View style={styles.habitsInfo}>
+          <Text style={styles.habitsHeading}>Habits</Text>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBarTrack}>
+              <View style={[styles.progressBarFill, { width: `${progressPct}%` }]} />
+            </View>
+            <Text style={styles.progressText}>
+              {completedCount} / {totalCount} habits completed
+            </Text>
           </View>
-          <Text style={styles.progressText}>
-            {completedCount} / {totalCount} completed
-          </Text>
         </View>
-        <View style={styles.progressPlantBox} />
+        <TouchableOpacity
+          style={styles.squareAddButton}
+          activeOpacity={0.85}
+          onPress={() => router.push('/newhabit')}
+        >
+          <Text style={styles.plusIcon}>+</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        activeOpacity={0.85}
-        onPress={() => router.push('/newhabit')}
-      >
-        <Text style={styles.addButtonText}>+ Add Habit</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.habitsHeading}>Habits</Text>
 
       {totalCount === 0 && !loading ? (
         <Text style={styles.emptyText}>No habits yet — create your first one!</Text>
@@ -483,7 +482,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
-    marginBottom: 16,
+    marginBottom: 24,
   },
   dayColumn: {
     alignItems: 'center',
@@ -513,58 +512,60 @@ const styles = StyleSheet.create({
     color: GREEN_DARK,
     fontWeight: '700',
   },
-  progressCard: {
+  habitsHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: GREEN_LIGHT,
-    borderRadius: 16,
-    padding: 16,
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginBottom: 28,
     gap: 16,
-    marginBottom: 16,
   },
-  progressLeft: {
+  habitsInfo: {
     flex: 1,
     gap: 8,
   },
+  habitsHeading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+  },
+  progressContainer: {
+    gap: 6,
+    marginTop: 4,
+  },
   progressBarTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#E0E0E0',
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: GREEN_DARK,
-    borderRadius: 4,
+    borderRadius: 5,
   },
   progressText: {
     fontSize: 13,
     color: '#1A1A1A',
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  progressPlantBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: GREEN_MID,
-  },
-  addButton: {
+  squareAddButton: {
+    width: 50,
+    height: 50,
     backgroundColor: GREEN_DARK,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 18,
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  addButtonText: {
+  plusIcon: {
+    fontSize: 32,
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  habitsHeading: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 12,
+    fontWeight: '300',
+    marginTop: -2,
   },
   sectionLabel: {
     fontSize: 14,
