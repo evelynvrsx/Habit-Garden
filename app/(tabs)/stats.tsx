@@ -206,7 +206,7 @@ function CalendarLegend() {
         <Text style={styles.legendText}>Partial</Text>
       </View>
       <View style={styles.legendItem}>
-        <View style={[styles.legendDot, styles.dayMissed]} />
+        <View style={styles.legendDot} />
         <Text style={styles.legendText}>Missed</Text>
       </View>
       <View style={styles.legendItem}>
@@ -264,7 +264,6 @@ function CalendarGrid({
                 styles.dayCircle,
                 status === 'completed' && styles.dayCompleted,
                 status === 'partial' && styles.dayPartial,
-                status === 'missed' && styles.dayMissed,
                 isToday && styles.dayToday,
               ]}
             >
@@ -389,6 +388,6 @@ const styles = StyleSheet.create({
   dayTextOnDark: { color: '#fff', fontWeight: '700' },
   dayCompleted: { backgroundColor: GREEN_DARK, borderRadius: 15 },
   dayPartial: { borderWidth: 1.5, borderColor: GREEN_MID, borderRadius: 15 },
-  dayMissed: { borderWidth: 1, borderColor: '#E3B8B8', borderRadius: 15 },
+  dayMissed: { backgroundColor: 'transparent' },
   dayToday: { borderWidth: 2, borderColor: GREEN_DARK, borderRadius: 15 },
 });
