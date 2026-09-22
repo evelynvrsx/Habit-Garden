@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Animated, Image } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -323,7 +323,10 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <View style={styles.avatar} />
+        <Image
+          source={require('../../assets/images/pfp.jpg')}
+          style={styles.avatar}
+        />
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Today</Text>
           <Text style={styles.dateText}>{formatHeaderDate(today)}</Text>

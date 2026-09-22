@@ -1,16 +1,17 @@
 import { calculateGrowthStreak, StreakHabit, HabitLog } from './streaks';
 
-export type PlantStage = 'seed' | 'sprout' | 'flower' | 'tree' | 'bonus';
+export type PlantStage = 'seed' | 'sprout' | 'flower' | 'tree' | 'bonus' | 'final';
 
 // Thresholds are in completions, not time.
 // Each plant stage growth depends on how many times user has completed the habit on
 // its own scheduled days. so a daily habit's plant grows faster in real time
 const STAGE_THRESHOLDS: ReadonlyArray<{ minCompletions: number; stage: PlantStage }> = [
   { minCompletions: 0, stage: 'seed' },
-  { minCompletions: 3, stage: 'sprout' },
-  { minCompletions: 10, stage: 'flower' },
-  { minCompletions: 25, stage: 'tree' },
-  { minCompletions: 50, stage: 'bonus' },
+  { minCompletions: 1, stage: 'sprout' },
+  { minCompletions: 5, stage: 'flower' },
+  { minCompletions: 15, stage: 'tree' },
+  { minCompletions: 30, stage: 'bonus' },
+  { minCompletions: 50, stage: 'final' },
 ];
 
 /**

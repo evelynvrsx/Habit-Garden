@@ -8,6 +8,7 @@ const SPRITES: Record<PlantSpecies, Record<PlantStage, any>> = {
     flower: require('../assets/images/plants/pink-flower/budding.png'),
     tree: require('../assets/images/plants/pink-flower/bloom.png'),
     bonus: require('../assets/images/plants/pink-flower/bonus.png'),
+    final: require('../assets/images/plants/pink-flower/final.png'),
   },
   'strawberry-tree': {
     seed: require('../assets/images/plants/strawberry-tree/seed.png'),
@@ -15,6 +16,7 @@ const SPRITES: Record<PlantSpecies, Record<PlantStage, any>> = {
     flower: require('../assets/images/plants/strawberry-tree/budding.png'),
     tree: require('../assets/images/plants/strawberry-tree/bloom.png'),
     bonus: require('../assets/images/plants/strawberry-tree/bonus.png'),
+    final: require('../assets/images/plants/strawberry-tree/final.png'),
   },
   'purple-flower': {
     seed: require('../assets/images/plants/purple-flower/seed.png'),
@@ -22,6 +24,7 @@ const SPRITES: Record<PlantSpecies, Record<PlantStage, any>> = {
     flower: require('../assets/images/plants/purple-flower/budding.png'),
     tree: require('../assets/images/plants/purple-flower/bloom.png'),
     bonus: require('../assets/images/plants/purple-flower/bonus.png'),
+    final: require('../assets/images/plants/purple-flower/final.png'),
   },
 };
 
