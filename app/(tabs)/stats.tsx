@@ -5,7 +5,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Habit, HabitLog } from '../../lib/types';
-import { calculateOverallCompletionRate, calculateHeadlineStreak, getHabitSummaries, getCalendarDayStatuses, DayStatus } from '../../lib/stats';
+import { calculateOverallCompletionRate, calculateHeadlineStreak, getHabitSummaries, getCalendarDayStatuses, DayStatus, calculateBestStreakForHabit, calculateCompletionRateDelta } from '../../lib/stats';
 import { toLocalISOString } from '../../lib/dateUtils';
 import { getUserSettings } from '../../lib/userSettings';
 
@@ -67,6 +67,22 @@ export default function StatsScreen() {
   const today = useMemo(() => new Date(), []);
   const successRate = Math.round(calculateOverallCompletionRate(habits, logs, today));
   const currentStreak = calculateHeadlineStreak(habits, logs, today, reinforcementMode);
+  const rateDelta = calculateCompletionRateDelta(habits, logs, today);
+
+  const bestStreaks = useMemo(() => {
+    const map: Record<string, number> = {};
+    habits.forEach((h) => {
+      map[h.id] = calculateBestStreakForHabit(h, logs, today);
+    });
+    return map;
+  }, [habits, logs, today]);
+
+  function successRateLabel(rate: number, mode: number): string | null {
+    if (mode >= 50) return null;
+    if (rate >= 70) return 'Great consistency';
+    if (rate >= 40) return 'Building momentum';
+    return 'Just getting started';
+  }
 
   const summaries = useMemo(() => {
     const raw = getHabitSummaries(habits, logs, today, reinforcementMode);
@@ -128,6 +144,14 @@ export default function StatsScreen() {
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Success rate</Text>
           <Text style={styles.statValue}>{successRate}%</Text>
+          {successRateLabel(successRate, reinforcementMode) && (
+            <Text style={styles.statDelta}>{successRateLabel(successRate, reinforcementMode)}</Text>
+          )}
+          {rateDelta !== 0 && (
+            <Text style={styles.statDelta}>
+              {rateDelta > 0 ? 'increased' : 'decreased'} {Math.abs(rateDelta)}% vs last week
+            </Text>
+          )}
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Total habits</Text>
@@ -185,7 +209,7 @@ export default function StatsScreen() {
           <View key={s.id} style={styles.habitRow}>
             <Text style={styles.habitTitle}>{s.title}</Text>
             <Text style={styles.habitMeta}>
-              🔥 {s.currentStreak}d · {Math.round(s.completionRate)}%
+              🔥 {s.currentStreak}d (best {bestStreaks[s.id] ?? 0}d) · {Math.round(s.completionRate)}%
             </Text>
           </View>
         ))}
@@ -390,4 +414,5 @@ const styles = StyleSheet.create({
   dayPartial: { borderWidth: 1.5, borderColor: GREEN_MID, borderRadius: 15 },
   dayMissed: { backgroundColor: 'transparent' },
   dayToday: { borderWidth: 2, borderColor: GREEN_DARK, borderRadius: 15 },
+  statDelta: { fontSize: 11, color: GREEN_MID, marginTop: 2 },
 });
