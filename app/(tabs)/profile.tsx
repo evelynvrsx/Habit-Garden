@@ -87,7 +87,7 @@ export default function ProfileScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Image
-          source={{ uri: 'https://via.placeholder.com/100' }}
+          source={require('../../assets/images/pfp.jpg')}
           style={styles.avatar}
         />
         <View style={styles.headerInfo}>

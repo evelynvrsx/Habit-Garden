@@ -155,9 +155,7 @@ export type HabitFormValues = {
   target: number | null;
   target_unit: string | null;
   repeat_schedule: RepeatSchedule;
-  reminder: boolean;
   start_date: string;
-  end_date: string | null;
 };
 
 type InitialHabit = Partial<HabitFormValues>;
@@ -242,14 +240,9 @@ export default function HabitForm({
   );
 
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [reminderEnabled, setReminderEnabled] = useState(initialValues?.reminder ?? false);
   const [startDateEnabled, setStartDateEnabled] = useState(isEditing);
-  const [endDateEnabled, setEndDateEnabled] = useState(!!initialValues?.end_date);
   const [startDate, setStartDate] = useState(
     initialValues?.start_date ? new Date(initialValues.start_date) : new Date()
-  );
-  const [endDate, setEndDate] = useState(
-    initialValues?.end_date ? new Date(initialValues.end_date) : new Date()
   );
 
   const repeatOptions = ['Daily', 'Weekly', 'Monthly', 'Custom'] as const;
@@ -342,11 +335,9 @@ export default function HabitForm({
       title: habitTitle.trim(),
       icon: selectedIcon,
       repeat_schedule,
-      reminder: reminderEnabled,
       start_date: startDateEnabled ? toISODate(startDate) : toISODate(new Date()),
       target: targetEnabled ? Number(targetNumber ?? '30') : null,
       target_unit: targetEnabled ? TARGET_UNIT_MAP[targetType ?? '2'] : null,
-      end_date: endDateEnabled ? toISODate(endDate) : null,
     };
 
     try {
@@ -650,35 +641,12 @@ export default function HabitForm({
 
         {showAdvanced && (
           <View style={styles.advancedContent}>
-            <View style={styles.advancedRow}>
-              <Text style={styles.advancedLabel}>Remind me</Text>
-              <Switch
-                trackColor={{ false: '#D1D1D6', true: '#4CAF50' }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor="#D1D1D6"
-                onValueChange={() => setReminderEnabled(!reminderEnabled)}
-                value={reminderEnabled}
-              />
-            </View>
-
-            <View style={styles.thinDivider} />
-
             <DateRow
               label="Start Date"
               enabled={startDateEnabled}
               onToggle={() => setStartDateEnabled(!startDateEnabled)}
               date={startDate}
               onDateChange={setStartDate}
-            />
-
-            <View style={styles.thinDivider} />
-
-            <DateRow
-              label="End Date"
-              enabled={endDateEnabled}
-              onToggle={() => setEndDateEnabled(!endDateEnabled)}
-              date={endDate}
-              onDateChange={setEndDate}
             />
           </View>
         )}

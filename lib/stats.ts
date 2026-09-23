@@ -187,3 +187,51 @@ export function getCalendarDayStatuses(
 
   return result;
 }
+
+/**
+ * Longest streak this habit has EVER had, not just the current run.
+ * Walks forward from start_date, resetting only on missed scheduled days.
+ * Unlike current streak, this never goes down — pure positive-only stat.
+ */
+export function calculateBestStreakForHabit(
+  habit: Habit,
+  logs: HabitLog[],
+  asOf: Date = new Date()
+): number {
+  const completedSet = buildCompletedSet(logs);
+  let best = 0;
+  let current = 0;
+
+  const cursor = new Date(habit.start_date + 'T00:00:00');
+  while (cursor <= asOf) {
+    if (scheduledOn(habit, cursor)) {
+      if (isCompletedOn(completedSet, habit.id, toLocalISOString(cursor))) {
+        current += 1;
+        best = Math.max(best, current);
+      } else {
+        current = 0;
+      }
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return best;
+}
+
+/**
+ * Change in overall completion rate vs. 7 days ago.
+ * Positive = improving, negative = declining. Rounded to whole %.
+ */
+export function calculateCompletionRateDelta(
+  habits: Habit[],
+  logs: HabitLog[],
+  today: Date = new Date()
+): number {
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const currentRate = calculateOverallCompletionRate(habits, logs, today);
+  const priorRate = calculateOverallCompletionRate(habits, logs, weekAgo);
+
+  return Math.round(currentRate - priorRate);
+}
