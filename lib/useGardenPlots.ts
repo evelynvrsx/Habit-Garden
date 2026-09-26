@@ -15,7 +15,8 @@ export function useGardenPlots(habits: Habit[], logs: HabitLog[]) {
         stage: getPlantStageFromHabit(habit, habitLogs),
       };
     });
-    const emptyCount = Math.max(0, MIN_GRID_SIZE - occupied.length);
+    const totalNeeded = Math.max(MIN_GRID_SIZE, Math.ceil(occupied.length / 3) * 3);
+    const emptyCount = Math.max(0, totalNeeded - occupied.length);
     const empty = Array.from({ length: emptyCount }, () => ({
       habit: null,
       species: null,
