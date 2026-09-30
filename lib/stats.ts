@@ -1,6 +1,6 @@
 import { Habit, HabitLog } from './types';
 import { isHabitScheduledForDate } from './habitSchedule';
-import { calculateStreak, calculateGrowthStreak } from './streaks';
+import { calculateStreak, calculateGrowthStreak, calculateGraceStreak } from './streaks';
 import { getReinforcementTier, getEffectiveStreak } from './reinforcement';
 import { toLocalISOString } from './dateUtils';
 
@@ -43,7 +43,8 @@ function effectiveHabitStreak(
   if (reinforcementMode === undefined) return strict;
   const tier = getReinforcementTier(reinforcementMode);
   const growth = calculateGrowthStreak(habit, habitLogs, asOf);
-  return getEffectiveStreak(tier, strict, growth);
+  const grace = calculateGraceStreak(habit, habitLogs, asOf);
+  return getEffectiveStreak(tier, strict, growth, grace);
 }
 
 /**

@@ -19,7 +19,7 @@ export default function WeeklySnapshotsScreen() {
 
   const renderSnapshotGrid = (plots: SnapshotPlot[]) => {
     const paddedPlots = [...plots];
-    const totalNeeded = Math.max(9, Math.ceil(paddedPlots.length / 3) * 3);
+    const totalNeeded = Math.max(9, paddedPlots.length);
     while (paddedPlots.length < totalNeeded) {
       paddedPlots.push({
         habit_id: `empty-${paddedPlots.length}`,

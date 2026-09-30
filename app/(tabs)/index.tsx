@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { deleteHabit } from '../../store/habits';
 import { isHabitScheduledForDate } from '../../lib/habitSchedule';
 import { RepeatSchedule } from '../../components/HabitForm';
-import { calculateStreak, calculateGrowthStreak, HabitLog, StreakHabit } from '../../lib/streaks';
+import { calculateStreak, calculateGrowthStreak, calculateGraceStreak, HabitLog, StreakHabit } from '../../lib/streaks';
 import { PlantSpecies } from '../../lib/plantSpecies';
 import { toLocalISOString } from '../../lib/dateUtils';
 import { getUserSettings } from '../../lib/userSettings';
@@ -184,7 +184,8 @@ export default function HomeScreen() {
           const habitLogs = logs.filter((l) => l.habit_id === h.id);
           const strict = calculateStreak(h as StreakHabit, habitLogs, today);
           const growth = calculateGrowthStreak(h as StreakHabit, habitLogs, today);
-          return getEffectiveStreak(tier, strict, growth);
+          const grace = calculateGraceStreak(h as StreakHabit, habitLogs, today);
+          return getEffectiveStreak(tier, strict, growth, grace);
         });
         const currentStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
         setStreak(currentStreak);

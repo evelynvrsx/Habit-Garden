@@ -34,18 +34,22 @@ describe('getReinforcementCopy', () => {
 
 describe('getEffectiveStreak', () => {
   it('shows the strict streak in disciplined mode', () => {
-    expect(getEffectiveStreak('disciplined', 3, 47)).toBe(3);
+    expect(getEffectiveStreak('disciplined', 3, 47, 5)).toBe(3);
   });
 
-  it('shows the strict streak in balanced mode', () => {
+  it('shows the grace streak in balanced mode', () => {
+    expect(getEffectiveStreak('balanced', 3, 47, 5)).toBe(5);
+  });
+
+  it('falls back to strict streak in balanced mode if grace streak is omitted', () => {
     expect(getEffectiveStreak('balanced', 3, 47)).toBe(3);
   });
 
   it('shows the growth (cumulative) count in encouraging mode', () => {
-    expect(getEffectiveStreak('encouraging', 3, 47)).toBe(47);
+    expect(getEffectiveStreak('encouraging', 3, 47, 5)).toBe(47);
   });
 
   it('falls back sensibly when both numbers happen to match', () => {
-    expect(getEffectiveStreak('encouraging', 5, 5)).toBe(5);
+    expect(getEffectiveStreak('encouraging', 5, 5, 5)).toBe(5);
   });
 });

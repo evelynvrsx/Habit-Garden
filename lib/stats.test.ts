@@ -4,6 +4,7 @@
 jest.mock('./streaks', () => ({
   calculateStreak: jest.fn(() => 3),
   calculateGrowthStreak: jest.fn(() => 47),
+  calculateGraceStreak: jest.fn(() => 5),
 }));
 jest.mock('./reinforcement', () => ({
   getReinforcementTier: jest.requireActual('./reinforcement').getReinforcementTier,
@@ -25,8 +26,8 @@ describe('calculateHeadlineStreak', () => {
     expect(calculateHeadlineStreak([habit], logs, new Date('2026-02-01'), 0)).toBe(3);
   });
 
-  it('uses the strict streak in balanced mode', () => {
-    expect(calculateHeadlineStreak([habit], logs, new Date('2026-02-01'), 50)).toBe(3);
+  it('uses the grace streak in balanced mode', () => {
+    expect(calculateHeadlineStreak([habit], logs, new Date('2026-02-01'), 50)).toBe(5);
   });
 
   it('uses the growth (cumulative) count in encouraging mode', () => {
