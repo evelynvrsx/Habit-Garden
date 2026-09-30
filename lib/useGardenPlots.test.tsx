@@ -32,16 +32,15 @@ function getPlotsFor(habits: Habit[]) {
 }
 
 describe('useGardenPlots', () => {
-  it('returns 9 plots when 0 habits are provided', () => {
+  it('returns 0 plots when 0 habits are provided', () => {
     const plotsResult = getPlotsFor([]);
-    expect(plotsResult.length).toBe(9);
-    expect(plotsResult.filter((p) => p.habit !== null).length).toBe(0);
+    expect(plotsResult.length).toBe(0);
   });
 
-  it('returns 9 plots when 5 habits are provided', () => {
+  it('returns 5 plots when 5 habits are provided', () => {
     const habits = Array.from({ length: 5 }, (_, i) => createDummyHabit(`${i + 1}`));
     const plotsResult = getPlotsFor(habits);
-    expect(plotsResult.length).toBe(9);
+    expect(plotsResult.length).toBe(5);
     expect(plotsResult.filter((p) => p.habit !== null).length).toBe(5);
   });
 
@@ -52,17 +51,9 @@ describe('useGardenPlots', () => {
     expect(plotsResult.filter((p) => p.habit !== null).length).toBe(9);
   });
 
-  it('adds only 1 plot when a 10th habit is added (total 10 plots, not 12)', () => {
-    const habits = Array.from({ length: 10 }, (_, i) => createDummyHabit(`${i + 1}`));
+  it('returns 8 plots when habit is deleted (e.g. from 9 down to 8 habits)', () => {
+    const habits = Array.from({ length: 8 }, (_, i) => createDummyHabit(`${i + 1}`));
     const plotsResult = getPlotsFor(habits);
-    expect(plotsResult.length).toBe(10);
-    expect(plotsResult.filter((p) => p.habit !== null).length).toBe(10);
-  });
-
-  it('adds only 1 plot when an 11th habit is added (total 11 plots, not 12)', () => {
-    const habits = Array.from({ length: 11 }, (_, i) => createDummyHabit(`${i + 1}`));
-    const plotsResult = getPlotsFor(habits);
-    expect(plotsResult.length).toBe(11);
-    expect(plotsResult.filter((p) => p.habit !== null).length).toBe(11);
+    expect(plotsResult.length).toBe(8);
   });
 });
