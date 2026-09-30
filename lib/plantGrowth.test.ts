@@ -30,9 +30,9 @@ describe('getPlantStage — stage boundaries (completion-based)', () => {
     expect(getPlantStage(14)).toBe('flower');
   });
 
-  it('becomes tree at 15 completions, holds through 34', () => {
+  it('becomes tree at 15 completions, holds through 29', () => {
     expect(getPlantStage(15)).toBe('tree');
-    expect(getPlantStage(34)).toBe('tree');
+    expect(getPlantStage(29)).toBe('tree');
   });
 
   it('becomes bonus at 30 completions, holds through 49', () => {

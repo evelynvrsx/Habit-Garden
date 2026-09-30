@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, Alert, ScrollView, Touchable
 import { Stack, router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { RepeatSchedule } from '../../components/HabitForm';
-import { HabitLog, calculateStreak } from '../../lib/streaks';
+import { HabitLog } from '../../lib/streaks';
 
 type HabitDetails = {
   id: string;
@@ -58,7 +58,6 @@ export default function HabitDetailsScreen() {
     );
   }
 
-  const streak = calculateStreak(habit, logs);
   const totalCompletions = logs.length;
 
   const formatSchedule = (schedule: RepeatSchedule): string => {
@@ -116,10 +115,6 @@ export default function HabitDetailsScreen() {
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{totalCompletions}</Text>
           <Text style={styles.statLabel}>Total Done</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{streak}</Text>
-          <Text style={styles.statLabel}>Current Streak</Text>
         </View>
       </View>
 

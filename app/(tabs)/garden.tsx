@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { FlatList, View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, ScrollView } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -46,6 +46,14 @@ export default function GardenScreen() {
 
   const plots = useGardenPlots(habits, logs);
 
+  const rows = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < plots.length; i += 3) {
+      result.push(plots.slice(i, i + 3));
+    }
+    return result;
+  }, [plots]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -60,24 +68,38 @@ export default function GardenScreen() {
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-    <TouchableOpacity style={styles.snapshotButton} onPress={() => router.push('../weeklysnapshots')}>
-      <Text style={styles.snapshotButtonText}>Weekly Snapshots</Text>
-    </TouchableOpacity>
-      <FlatList
-        data={plots}
-        numColumns={3}
-        keyExtractor={(item, index) => item.habit?.id ?? `empty-${index}`}
-        renderItem={({ item }) => (
-          <PlotTile
-            habit={item.habit}
-            species={item.species}
-            stage={item.stage}
-            onPress={(habit) => router.push(`/habitdetails/${habit.id}`)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
+      <TouchableOpacity style={styles.snapshotButton} onPress={() => router.push('../weeklysnapshots')}>
+        <Text style={styles.snapshotButtonText}>Weekly Snapshots</Text>
+      </TouchableOpacity>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-      />
+      >
+        <View style={styles.gardenBed}>
+          {rows.map((rowPlots, rowIndex) => (
+            <View
+              key={`row-${rowIndex}`}
+              style={[
+                styles.gridRow,
+                rowIndex > 0 && styles.overlappingRow,
+                { zIndex: rowIndex + 1 },
+              ]}
+            >
+              {rowPlots.map((plot, colIndex) => (
+                <PlotTile
+                  key={plot.habit?.id ?? `empty-${rowIndex}-${colIndex}`}
+                  habit={plot.habit}
+                  species={plot.species}
+                  stage={plot.stage}
+                  style={colIndex > 0 ? styles.overlappingTile : undefined}
+                  onPress={plot.habit ? (habit) => router.push(`/habitdetails/${habit.id}`) : undefined}
+                />
+              ))}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
     </ImageBackground>
   );
 }
@@ -94,15 +116,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F4FBEF',
   },
-  listContent: {
-    padding: 16,
+  scrollContent: {
+    paddingHorizontal: 16,
     paddingTop: 20,
+    paddingBottom: 50,
     alignItems: 'center',
+  },
+  gardenBed: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlappingRow: {
+    marginTop: -16,
+  },
+  overlappingTile: {
+    marginLeft: -16,
   },
   snapshotButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     marginHorizontal: 40,
     marginTop: 60,
+    marginBottom: 10,
     paddingVertical: 12,
     borderRadius: 20,
     alignItems: 'center',
@@ -117,6 +157,6 @@ const styles = StyleSheet.create({
   snapshotButtonText: {
     color: '#2E7D32',
     fontSize: 15,
-    fontWeight: '700'
+    fontWeight: '700',
   },
 });

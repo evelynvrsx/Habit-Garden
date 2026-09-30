@@ -38,7 +38,10 @@ export function getReinforcementCopy(moment: ReinforcementMoment, value: number)
 export function getEffectiveStreak(
   tier: ReinforcementTier,
   strictStreak: number,
-  growthStreak: number
+  growthStreak: number,
+  graceStreak?: number
 ): number {
-  return tier === 'encouraging' ? growthStreak : strictStreak;
+  if (tier === 'encouraging') return growthStreak;
+  if (tier === 'balanced') return graceStreak ?? strictStreak;
+  return strictStreak;
 }
