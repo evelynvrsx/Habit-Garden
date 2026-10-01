@@ -18,3 +18,14 @@ export function startOfLocalDay(date: Date): Date {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+
+/**
+ * Returns the YYYY-MM-DD string for the most recent Monday (start of the week).
+ */
+export function mostRecentMonday(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + mondayOffset);
+  return d.toISOString().split('T')[0];
+}

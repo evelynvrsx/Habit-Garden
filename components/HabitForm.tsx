@@ -718,7 +718,6 @@ const styles = StyleSheet.create({
   editIconBtn: { padding: 4 },
   editIconText: { fontSize: 18, color: '#888' },
   divider: { height: 1, backgroundColor: '#EEEEEE', marginVertical: 20 },
-  thinDivider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 12 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowLabel: { fontSize: 15, fontWeight: '500', color: '#1A1A1A' },
   dropdownRow: { flexDirection: 'row', gap: 12, marginTop: 12 },

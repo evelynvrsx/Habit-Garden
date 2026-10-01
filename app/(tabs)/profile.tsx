@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, PanResponder, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -185,19 +185,6 @@ function FAQSection() {
   );
 }
 
-
-function MenuItem({ icon, label }: { icon: any; label: string }) {
-  return (
-    <TouchableOpacity style={styles.menuItem}>
-      <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={20} color="#2D4A34" style={styles.menuIcon} />
-        <Text style={styles.menuItemText}>{label}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="#6B8F5F" />
-    </TouchableOpacity>
-  );
-}
-
 function ReinforcementSlider({ value, onChange }: { value: number; onChange: (val: number) => void }) {
   return (
     <View style={styles.sliderTrack}>
@@ -250,18 +237,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: GREEN_DARK, marginBottom: 16 },
 
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F2EE'
-  },
-  menuItemLeft: { flexDirection: 'row', alignItems: 'center' },
-  menuIcon: { marginRight: 12 },
-  menuItemText: { fontSize: 16, color: GREEN_DARK, fontWeight: '500' },
-
   reinforcementContainer: { marginVertical: 8 },
   reinforcementHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   reinforcementLabel: { fontSize: 16, fontWeight: '600', color: GREEN_DARK },
@@ -274,7 +249,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'visible'
   },
-  sliderTouchable: { flex: 1, position: 'relative' },
   sliderFill: { height: '100%', backgroundColor: GREEN_DARK, borderRadius: 6 },
   sliderThumb: {
     width: 24,
