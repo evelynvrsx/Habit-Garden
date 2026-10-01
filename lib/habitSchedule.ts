@@ -1,15 +1,10 @@
 import { RepeatSchedule } from '../components/HabitForm';
+import { startOfLocalDay } from './dateUtils';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function dayLabel(date: Date): string {
   return DAY_LABELS[date.getDay()];
-}
-
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
 }
 
 function daysInMonth(year: number, monthIndex0: number): number {
@@ -33,11 +28,11 @@ export function isHabitScheduledForDate(
   startDateISO: string,
   endDateISO?: string | null
 ): boolean {
-  const target = startOfDay(date);
-  const start = startOfDay(new Date(startDateISO));
+  const target = startOfLocalDay(date);
+  const start = startOfLocalDay(new Date(startDateISO));
   if (target < start) return false;
   if (endDateISO) {
-    const end = startOfDay(new Date(endDateISO));
+    const end = startOfLocalDay(new Date(endDateISO));
     if (target > end) return false;
   }
   switch (schedule.type) {

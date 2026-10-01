@@ -1,9 +1,8 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Animated, Image } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { supabase } from '../../lib/supabase';
+import { supabase, deleteHabit } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { deleteHabit } from '../../store/habits';
 import { isHabitScheduledForDate } from '../../lib/habitSchedule';
 import { RepeatSchedule } from '../../components/HabitForm';
 import { calculateStreak, calculateGrowthStreak, calculateGraceStreak, HabitLog, StreakHabit } from '../../lib/streaks';
@@ -11,20 +10,11 @@ import { PlantSpecies } from '../../lib/plantSpecies';
 import { toLocalISOString } from '../../lib/dateUtils';
 import { getUserSettings } from '../../lib/userSettings';
 import { getReinforcementCopy, getReinforcementTier, getEffectiveStreak } from '../../lib/reinforcement';
+import { Habit } from '../../lib/types';
 
-type Habit = {
-  id: string;
-  user_id: string;
-  title: string;
-  icon: string | null;
-  target: number | null;
-  target_unit: string | null;
-  repeat_schedule: RepeatSchedule;
-  reminder: boolean;
-  start_date: string;
-  end_date: string | null;
-  plant_species: PlantSpecies;
-};
+type ListItem =
+  | { type: 'header'; label: string }
+  | { type: 'habit'; habit: Habit };
 
 const TIME_TYPE_LABELS: Record<string, string> = {
   seconds: 'sec',
@@ -378,16 +368,16 @@ export default function HomeScreen() {
       {totalCount === 0 && !loading ? (
         <Text style={styles.emptyText}>No habits yet — create your first one!</Text>
       ) : (
-        <FlatList
+        <FlatList<ListItem>
           data={[
             { type: 'header', label: 'To do' },
             ...todoHabits.map((h) => ({ type: 'habit' as const, habit: h })),
             ...(completedHabits.length > 0
-              ? [{ type: 'header', label: 'Completed' }]
+              ? [{ type: 'header' as const, label: 'Completed' }]
               : []),
             ...completedHabits.map((h) => ({ type: 'habit' as const, habit: h })),
           ]}
-          keyExtractor={(item, index) =>
+          keyExtractor={(item) =>
             item.type === 'header' ? `header-${item.label}` : item.habit.id
           }
           renderItem={({ item }) =>

@@ -318,24 +318,6 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: GREEN_BG },
 
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: GREEN_CARD,
-    borderRadius: 20,
-    padding: 4,
-    marginBottom: 20,
-  },
-  tabInactive: { flex: 1, paddingVertical: 8, alignItems: 'center' },
-  tabInactiveText: { color: GREEN_MID, fontWeight: '500' },
-  tabActive: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    backgroundColor: GREEN_DARK,
-    borderRadius: 16,
-  },
-  tabActiveText: { color: '#fff', fontWeight: '600' },
-
   sectionHeading: { fontSize: 20, fontWeight: '700', color: GREEN_DARK, marginBottom: 10 },
 
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },

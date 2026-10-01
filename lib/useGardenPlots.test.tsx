@@ -1,4 +1,5 @@
 import React from 'react';
+// @ts-ignore
 import { create, act } from 'react-test-renderer';
 import { useGardenPlots } from './useGardenPlots';
 import { Habit } from './types';

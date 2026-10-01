@@ -15,3 +15,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
+
+export async function deleteHabit(habitId: string) {
+  const { error } = await supabase
+    .from('habits')
+    .delete()
+    .eq('id', habitId);
+
+  if (error) throw error;
+}

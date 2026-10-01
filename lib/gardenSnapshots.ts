@@ -4,6 +4,7 @@ import { getPlantStageFromHabit } from './plantGrowth';
 import { HabitLog } from './streaks';
 import { PlantSpecies } from './plantSpecies';
 import { PlantStage } from './plantGrowth';
+import { mostRecentMonday } from './dateUtils';
 
 export type SnapshotPlot = {
   habit_id: string;
@@ -18,13 +19,7 @@ export type GardenSnapshot = {
   plots: SnapshotPlot[];
 };
 
-export function mostRecentMonday(date: Date): string {
-  const d = new Date(date);
-  const day = d.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + mondayOffset);
-  return d.toISOString().split('T')[0];
-}
+export { mostRecentMonday };
 
 // The Monday exactly 7 days before a given Monday — i.e. the previous,
 // now-fully-completed week.
